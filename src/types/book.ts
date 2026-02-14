@@ -20,7 +20,7 @@ export interface Book {
 
 // SWI Analysis Types
 
-export type DepthLevel = 'simple' | 'standard' | 'deep' | 'full';
+export type DepthLevel = 'simple' | 'standard' | 'deep';
 
 export interface Morpheme {
   text: string;
@@ -42,6 +42,9 @@ export interface WordMatrix {
 export interface SWIAnalysis {
   word: string;
   depth: DepthLevel;
+  definition: string;
+  wordSum: string;
+  relatives: string[];
   matrix: WordMatrix;
 }
 
@@ -50,6 +53,8 @@ export interface SWIAnalysis {
 export interface AnalyzeRequest {
   word: string;
   depth: DepthLevel;
+  bookTitle?: string;
+  pageText?: string;
 }
 
 export interface AnalyzeResponse {

@@ -1,17 +1,51 @@
 'use client';
 
-import type { SWIAnalysis, WordPosition } from '@/types/book';
+import type { DepthLevel, SWIAnalysis, WordPosition } from '@/types/book';
 
 interface SWIPanelProps {
   selectedWord: WordPosition | null;
   analysis: SWIAnalysis | null;
   isLoading: boolean;
   error: string | null;
+  depth: DepthLevel;
   onClose: () => void;
 }
 
-export function SWIPanel({ selectedWord, analysis, isLoading, error, onClose }: SWIPanelProps) {
+function WordSumDisplay({ wordSum, bases, word }: { wordSum: string; bases: string[]; word: string }) {
+  const parts = wordSum.split(/\s*\+\s*/);
+  const basesLower = bases.map(b => b.toLowerCase());
+
+  return (
+    <div className="flex items-center flex-wrap gap-1.5">
+      {parts.map((part, i) => {
+        const isBase = basesLower.includes(part.toLowerCase());
+        const firstBaseIdx = parts.findIndex(p => basesLower.includes(p.toLowerCase()));
+        let colorClass = 'bg-orange-100 text-orange-800'; // suffix default
+        if (isBase) {
+          colorClass = 'bg-green-100 text-green-800';
+        } else if (i < firstBaseIdx) {
+          colorClass = 'bg-blue-100 text-blue-800'; // prefix
+        }
+
+        return (
+          <span key={i} className="flex items-center gap-1.5">
+            {i > 0 && <span className="text-gray-400 text-sm">+</span>}
+            <span className={`px-2.5 py-1 rounded-full text-sm font-semibold ${colorClass} ${isBase ? 'text-base' : ''}`}>
+              {isBase ? part.toUpperCase() : part}
+            </span>
+          </span>
+        );
+      })}
+      <span className="text-gray-400 mx-1">→</span>
+      <span className="font-bold text-gray-800">{word}</span>
+    </div>
+  );
+}
+
+export function SWIPanel({ selectedWord, analysis, isLoading, error, depth, onClose }: SWIPanelProps) {
   const isOpen = selectedWord !== null;
+  const showMatrix = depth === 'standard' || depth === 'deep';
+  const showRelatives = depth === 'deep';
 
   return (
     <aside
@@ -50,52 +84,82 @@ export function SWIPanel({ selectedWord, analysis, isLoading, error, onClose }: 
 
         {analysis && !isLoading && (
           <div className="space-y-5">
-            {/* Bases */}
+            {/* 1. Definition (SWI Q1: What does it mean?) */}
+            {analysis.definition && (
+              <section>
+                <h3 className="text-xs font-semibold uppercase text-gray-400 mb-1">Meaning</h3>
+                <p className="text-sm text-gray-700">{analysis.definition}</p>
+              </section>
+            )}
+
+            {/* 2. Word Sum (SWI Q2: How is it built?) */}
             <section>
-              <h3 className="text-xs font-semibold uppercase text-gray-400 mb-2">Base</h3>
-              <div className="flex flex-wrap gap-2">
-                {analysis.matrix.bases.map((b, i) => (
-                  <span
-                    key={i}
-                    className="px-3 py-1.5 rounded-full text-sm font-semibold bg-green-100 text-green-800"
-                  >
-                    {b.text}
-                    <span className="ml-1 font-normal text-xs opacity-70">({b.meaning})</span>
-                  </span>
-                ))}
-              </div>
+              <h3 className="text-xs font-semibold uppercase text-gray-400 mb-2">Word Sum</h3>
+              <WordSumDisplay
+                wordSum={analysis.wordSum}
+                bases={analysis.matrix.bases.map(b => b.text)}
+                word={analysis.word}
+              />
             </section>
 
-            {/* Prefixes */}
-            {analysis.matrix.prefixes.length > 0 && (
+            {/* 3. Word Matrix (Standard + Deep) */}
+            {showMatrix && (
               <section>
-                <h3 className="text-xs font-semibold uppercase text-gray-400 mb-2">Prefixes</h3>
-                <div className="flex flex-wrap gap-2">
-                  {analysis.matrix.prefixes.map((p, i) => (
-                    <span
-                      key={i}
-                      className="px-3 py-1.5 rounded-full text-sm font-semibold bg-blue-100 text-blue-800"
-                    >
-                      {p.text}-
-                      <span className="ml-1 font-normal text-xs opacity-70">({p.meaning})</span>
-                    </span>
-                  ))}
+                <h3 className="text-xs font-semibold uppercase text-gray-400 mb-2">Word Matrix</h3>
+                <div className="flex gap-3 items-start">
+                  {/* Prefixes column */}
+                  {analysis.matrix.prefixes.length > 0 && (
+                    <div className="flex flex-col gap-1.5">
+                      {analysis.matrix.prefixes.map((p, i) => (
+                        <span
+                          key={i}
+                          className="px-2 py-1 rounded text-xs font-medium bg-blue-50 text-blue-700 text-right"
+                          title={p.meaning}
+                        >
+                          {p.text}-
+                        </span>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Base column */}
+                  <div className="flex flex-col gap-1.5 items-center">
+                    {analysis.matrix.bases.map((b, i) => (
+                      <div key={i} className="flex flex-col items-center">
+                        <span className="px-3 py-1.5 rounded-lg text-sm font-bold bg-green-100 text-green-800">
+                          {b.text.toUpperCase()}
+                        </span>
+                        <span className="text-[10px] text-gray-400 mt-0.5">{b.meaning}</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Suffixes column */}
+                  {analysis.matrix.suffixes.length > 0 && (
+                    <div className="flex flex-col gap-1.5">
+                      {analysis.matrix.suffixes.map((s, i) => (
+                        <span
+                          key={i}
+                          className="px-2 py-1 rounded text-xs font-medium bg-orange-50 text-orange-700"
+                          title={s.meaning}
+                        >
+                          -{s.text}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </section>
             )}
 
-            {/* Suffixes */}
-            {analysis.matrix.suffixes.length > 0 && (
+            {/* 4. Word Relatives (Deep only) */}
+            {showRelatives && analysis.relatives.length > 0 && (
               <section>
-                <h3 className="text-xs font-semibold uppercase text-gray-400 mb-2">Suffixes</h3>
-                <div className="flex flex-wrap gap-2">
-                  {analysis.matrix.suffixes.map((s, i) => (
-                    <span
-                      key={i}
-                      className="px-3 py-1.5 rounded-full text-sm font-semibold bg-orange-100 text-orange-800"
-                    >
-                      -{s.text}
-                      <span className="ml-1 font-normal text-xs opacity-70">({s.meaning})</span>
+                <h3 className="text-xs font-semibold uppercase text-gray-400 mb-2">Word Family</h3>
+                <div className="flex flex-wrap gap-1.5">
+                  {analysis.relatives.map((r, i) => (
+                    <span key={i} className="px-2.5 py-1 bg-purple-50 text-purple-700 rounded-full text-sm">
+                      {r}
                     </span>
                   ))}
                 </div>

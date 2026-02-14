@@ -2,17 +2,28 @@ import { NextRequest } from 'next/server';
 import path from 'path';
 import { execFile } from 'child_process';
 import { promisify } from 'util';
-import type { AnalyzeRequest, AnalyzeResponse, SWIAnalysis, WordMatrix } from '@/types/book';
+import type { AnalyzeRequest, AnalyzeResponse, SWIAnalysis } from '@/types/book';
 import { getCachedAnalysis, setCachedAnalysis } from '@/lib/wordCache';
 
 const execFileAsync = promisify(execFile);
 
-async function analyzeWord(word: string): Promise<WordMatrix> {
+interface PythonOutput {
+  definition: string;
+  wordSum: string;
+  relatives: string[];
+  matrix: { bases: { text: string; meaning: string }[]; prefixes: { text: string; meaning: string }[]; suffixes: { text: string; meaning: string }[] };
+}
+
+async function analyzeWord(word: string, context?: { bookTitle?: string; pageText?: string }): Promise<PythonOutput> {
   const scriptPath = path.join(process.cwd(), 'main.py');
-  const { stdout } = await execFileAsync('python3', [scriptPath, word], {
+  const args = [scriptPath, word];
+  if (context?.bookTitle || context?.pageText) {
+    args.push(JSON.stringify(context));
+  }
+  const { stdout } = await execFileAsync('python3', args, {
     maxBuffer: 10 * 1024 * 1024,
     env: { ...process.env },
-    timeout: 30000,
+    timeout: 60000,
   });
   return JSON.parse(stdout);
 }
@@ -25,7 +36,7 @@ export async function POST(req: NextRequest) {
     return Response.json({ error: 'Invalid JSON body' }, { status: 400 });
   }
 
-  const { word, depth } = body;
+  const { word, depth, bookTitle, pageText } = body;
   if (!word || !depth) {
     return Response.json({ error: 'Missing word or depth' }, { status: 400 });
   }
@@ -37,8 +48,15 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const matrix = await analyzeWord(word);
-    const analysis: SWIAnalysis = { word, depth, matrix };
+    const result = await analyzeWord(word, { bookTitle, pageText });
+    const analysis: SWIAnalysis = {
+      word,
+      depth,
+      definition: result.definition,
+      wordSum: result.wordSum,
+      relatives: result.relatives,
+      matrix: result.matrix,
+    };
     setCachedAnalysis(word, depth, analysis);
     return Response.json({ analysis } satisfies AnalyzeResponse);
   } catch (err) {

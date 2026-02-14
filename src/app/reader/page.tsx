@@ -45,6 +45,16 @@ function ReaderContent() {
     return () => window.removeEventListener('keydown', onKey);
   }, [book]);
 
+  // Reconstruct approximate page text from word positions (reading order)
+  const page = book?.pages[currentPage];
+  const pageText = page
+    ? page.words
+        .slice()
+        .sort((a, b) => a.y - b.y || a.x - b.x)
+        .map(w => w.text)
+        .join(' ')
+    : '';
+
   // Fetch analysis for a word
   const fetchAnalysis = useCallback(async (word: WordPosition, depthLevel: DepthLevel) => {
     setSelectedWord(word);
@@ -56,7 +66,12 @@ function ReaderContent() {
       const res = await fetch('/api/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ word: word.text, depth: depthLevel }),
+        body: JSON.stringify({
+          word: word.text,
+          depth: depthLevel,
+          bookTitle: book?.title,
+          pageText,
+        }),
       });
       if (!res.ok) throw new Error('Analysis request failed');
       const data = await res.json();
@@ -66,7 +81,7 @@ function ReaderContent() {
     } finally {
       setIsAnalyzing(false);
     }
-  }, []);
+  }, [book?.title, pageText]);
 
   const handleWordClick = useCallback((word: WordPosition) => {
     fetchAnalysis(word, depth);
@@ -103,7 +118,6 @@ function ReaderContent() {
     );
   }
 
-  const page = book.pages[currentPage];
   const isPanelOpen = selectedWord !== null;
 
   return (
@@ -158,6 +172,7 @@ function ReaderContent() {
         analysis={analysis}
         isLoading={isAnalyzing}
         error={analysisError}
+        depth={depth}
         onClose={handleClosePanel}
       />
     </div>

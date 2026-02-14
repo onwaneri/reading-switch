@@ -3,10 +3,9 @@
 import type { DepthLevel } from '@/types/book';
 
 const LEVELS: { value: DepthLevel; label: string; description: string }[] = [
-  { value: 'simple', label: 'Simple', description: 'Word parts only' },
-  { value: 'standard', label: 'Standard', description: '+ meanings' },
-  { value: 'deep', label: 'Deep', description: '+ origin & family' },
-  { value: 'full', label: 'Full SWI', description: 'Complete analysis' },
+  { value: 'simple', label: 'Simple', description: 'Meaning + word sum' },
+  { value: 'standard', label: 'Standard', description: '+ word matrix' },
+  { value: 'deep', label: 'Deep', description: '+ word family' },
 ];
 
 interface DepthSelectorProps {

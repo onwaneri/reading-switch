@@ -239,7 +239,72 @@ IMPORTANT: Return ONLY valid JSON with verified morphemes. No markdown, no expla
         raise
 
 
-def get_word_matrix(word: str) -> dict:
+def analyze_word_in_context(word: str, base: str, context: dict = None) -> dict:
+    """
+    Analyze a specific word: definition, word sum, and relatives.
+
+    Args:
+        word: The original word tapped by the user
+        base: The extracted base morpheme(s)
+        context: Optional dict with bookTitle and pageText for better definitions
+
+    Returns:
+        Dictionary with definition, wordSum, and relatives
+    """
+    # Build context section for the prompt
+    context_section = ""
+    if context:
+        book_title = context.get("bookTitle", "")
+        page_text = context.get("pageText", "")
+        if book_title or page_text:
+            context_section = "\nCONTEXT FOR DEFINITION:\n"
+            if book_title:
+                context_section += f'This word appears in the book "{book_title}".\n'
+            if page_text:
+                context_section += f'The page text where it appears: "{page_text}"\n'
+            context_section += "Use this context to make the definition relevant to how the word is used in the story. If the word is a made-up name or fantasy word, explain it as a character/place name from the story.\n"
+
+    prompt = f"""You are an expert linguist specializing in structured word inquiry for kids.
+
+Analyze the word "{word}" which has the base morpheme(s) "{base}".
+{context_section}
+Return a JSON object with exactly these three fields:
+
+1. "definition": A brief, kid-friendly definition (1 sentence, simple language). If story context is provided, make the definition relevant to how the word is used in that story.
+2. "wordSum": The word sum showing how "{word}" is built from its morphemes, separated by " + ". Use the ACTUAL morphemes (prefixes, base, suffixes). Example: "con + struct + ion" for "construction", "un + happy + ness" for "unhappiness", "re + play" for "replay". If the word IS the base with no affixes, just return the base itself.
+3. "relatives": A list of 4-6 common English words built from the same base "{base}". Only include real, common words a child might encounter. Do NOT include the original word "{word}".
+
+Examples:
+Word "construction", base "struct":
+{{"definition": "The process of building something", "wordSum": "con + struct + ion", "relatives": ["structure", "destruction", "instruct", "restructure"]}}
+
+Word "unhappiness", base "happy":
+{{"definition": "The feeling of not being happy", "wordSum": "un + happy + ness", "relatives": ["happiness", "happily", "unhappy"]}}
+
+Word "replay", base "play":
+{{"definition": "To play something again", "wordSum": "re + play", "relatives": ["player", "playful", "playing", "display"]}}
+
+Now analyze: "{word}" with base "{base}"
+
+Return ONLY valid JSON. No markdown, no explanation."""
+
+    try:
+        response = call_llm(prompt)
+        cleaned = clean_json_response(response)
+        result = json.loads(cleaned)
+        print(f"Analyzed word in context: '{word}'", file=sys.stderr)
+        return result
+    except Exception as e:
+        print(f"Error analyzing word in context '{word}': {e}", file=sys.stderr)
+        # Return fallback so the app still works
+        return {
+            "definition": f"A word related to {base}",
+            "wordSum": word,
+            "relatives": []
+        }
+
+
+def get_word_matrix(word: str, context: dict = None) -> dict:
     """
     Main function to get a word matrix for any input word.
 
@@ -251,37 +316,51 @@ def get_word_matrix(word: str) -> dict:
 
     Args:
         word: The input word to analyze
+        context: Optional dict with bookTitle and pageText for better definitions
 
     Returns:
         Dictionary containing the complete word matrix
     """
     print(f"Processing word: {word}", file=sys.stderr)
+    if context:
+        print(f"Context: book='{context.get('bookTitle', '')}', pageText length={len(context.get('pageText', ''))}", file=sys.stderr)
 
     # Step 1: Extract the base morpheme
     base = extract_base(word)
 
-    # Step 2: Check cache
+    # Step 2: Check cache for the matrix
     if base in matrix_cache:
         print(f"Cache hit! Using cached matrix for '{base}'", file=sys.stderr)
-        return matrix_cache[base]
+        matrix = matrix_cache[base]
+    else:
+        print(f"Cache miss. Generating new matrix for '{base}'", file=sys.stderr)
+        matrix = generate_matrix(base)
+        matrix_cache[base] = matrix
 
-    print(f"Cache miss. Generating new matrix for '{base}'", file=sys.stderr)
+    # Step 3: Get word-specific analysis (definition, word sum, relatives)
+    word_analysis = analyze_word_in_context(word, base, context)
 
-    # Step 3: Generate matrix
-    matrix = generate_matrix(base)
+    return {
+        "definition": word_analysis.get("definition", ""),
+        "wordSum": word_analysis.get("wordSum", word),
+        "relatives": word_analysis.get("relatives", []),
+        "matrix": matrix,
+    }
 
-    # Step 4: Store in cache
-    matrix_cache[base] = matrix
 
-    return matrix
-
-
-# CLI: python3 main.py <word>
+# CLI: python3 main.py <word> [contextJson]
 # Outputs JSON to stdout for the Next.js API route.
 if __name__ == "__main__":
-    if len(sys.argv) == 2:
-        result = get_word_matrix(sys.argv[1])
+    if len(sys.argv) >= 2:
+        word = sys.argv[1]
+        context = None
+        if len(sys.argv) >= 3:
+            try:
+                context = json.loads(sys.argv[2])
+            except json.JSONDecodeError:
+                print("Warning: could not parse context JSON, ignoring", file=sys.stderr)
+        result = get_word_matrix(word, context)
         print(json.dumps(result))
     else:
-        print("Usage: python3 main.py <word>", file=sys.stderr)
+        print("Usage: python3 main.py <word> [contextJson]", file=sys.stderr)
         sys.exit(1)
