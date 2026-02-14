@@ -10,10 +10,7 @@ from typing import Dict
 from anthropic import Anthropic
 
 
-# API key - for hackathon/testing purposes
-# WARNING: Don't commit this file to git with a hardcoded API key!
-API_KEY = ""
-client = Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY", API_KEY))
+client = Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))
 
 # In-memory cache for word matrices
 matrix_cache: Dict[str, dict] = {}
