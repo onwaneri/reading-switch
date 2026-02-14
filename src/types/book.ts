@@ -28,15 +28,21 @@ export interface Morpheme {
   meaning?: string;
 }
 
+export interface MatrixMorpheme {
+  text: string;
+  meaning: string;
+}
+
+export interface WordMatrix {
+  bases: MatrixMorpheme[];
+  prefixes: MatrixMorpheme[];
+  suffixes: MatrixMorpheme[];
+}
+
 export interface SWIAnalysis {
   word: string;
   depth: DepthLevel;
-  wordSum: string;
-  morphemes: Morpheme[];
-  etymology?: string;
-  wordFamily?: string[];
-  phonologyNote?: string;
-  wordMatrix?: string;
+  matrix: WordMatrix;
 }
 
 // API Contracts

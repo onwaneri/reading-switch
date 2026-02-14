@@ -5,6 +5,7 @@ Uses Claude API for morphological analysis.
 
 import json
 import os
+import sys
 from typing import Dict
 from anthropic import Anthropic
 
@@ -39,7 +40,7 @@ def call_llm(prompt: str) -> str:
         )
         return message.content[0].text
     except Exception as e:
-        print(f"Error calling Claude API: {e}")
+        print(f"Error calling Claude API: {e}", file=sys.stderr)
         raise
 
 
@@ -113,10 +114,10 @@ Return ONLY the base morpheme(s) with no explanation, no hyphens in the bases th
 
     try:
         base = call_llm(prompt).strip()
-        print(f"Extracted base: '{base}'")
+        print(f"Extracted base: '{base}'", file=sys.stderr)
         return base
     except Exception as e:
-        print(f"Error extracting base for '{word}': {e}")
+        print(f"Error extracting base for '{word}': {e}", file=sys.stderr)
         raise
 
 
@@ -226,15 +227,15 @@ IMPORTANT: Return ONLY valid JSON with verified morphemes. No markdown, no expla
         if not all(key in matrix for key in required_keys):
             raise ValueError(f"Matrix missing required keys. Got: {matrix.keys()}")
 
-        print(f"Generated matrix for base '{base}'")
+        print(f"Generated matrix for base '{base}'", file=sys.stderr)
         return matrix
 
     except json.JSONDecodeError as e:
-        print(f"Error parsing JSON response for base '{base}': {e}")
-        print(f"Cleaned response was: {cleaned_response}")
+        print(f"Error parsing JSON response for base '{base}': {e}", file=sys.stderr)
+        print(f"Cleaned response was: {cleaned_response}", file=sys.stderr)
         raise ValueError(f"AI did not return valid JSON: {e}")
     except Exception as e:
-        print(f"Error generating matrix for '{base}': {e}")
+        print(f"Error generating matrix for '{base}': {e}", file=sys.stderr)
         raise
 
 
@@ -254,17 +255,17 @@ def get_word_matrix(word: str) -> dict:
     Returns:
         Dictionary containing the complete word matrix
     """
-    print(f"Processing word: {word}")
+    print(f"Processing word: {word}", file=sys.stderr)
 
     # Step 1: Extract the base morpheme
     base = extract_base(word)
 
     # Step 2: Check cache
     if base in matrix_cache:
-        print(f"Cache hit! Using cached matrix for '{base}'")
+        print(f"Cache hit! Using cached matrix for '{base}'", file=sys.stderr)
         return matrix_cache[base]
 
-    print(f"Cache miss. Generating new matrix for '{base}'")
+    print(f"Cache miss. Generating new matrix for '{base}'", file=sys.stderr)
 
     # Step 3: Generate matrix
     matrix = generate_matrix(base)
@@ -275,16 +276,12 @@ def get_word_matrix(word: str) -> dict:
     return matrix
 
 
-# Example usage
+# CLI: python3 main.py <word>
+# Outputs JSON to stdout for the Next.js API route.
 if __name__ == "__main__":
-    # Example 1: Get matrix for "construction"
-    result = get_word_matrix("construction")
-    print("\n=== Word Matrix for 'construction' ===")
-    print(json.dumps(result, indent=2))
-
-    # Example 2: Demonstrate caching
-    # If you call it again with a word from the same base, it uses cache
-    print("\n" + "="*50)
-    result2 = get_word_matrix("structural")  # Same base "struct"
-    print("\n=== Word Matrix for 'structural' (should use cache) ===")
-    print(json.dumps(result2, indent=2))
+    if len(sys.argv) == 2:
+        result = get_word_matrix(sys.argv[1])
+        print(json.dumps(result))
+    else:
+        print("Usage: python3 main.py <word>", file=sys.stderr)
+        sys.exit(1)

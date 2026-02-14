@@ -49,63 +49,56 @@ export function SWIPanel({ selectedWord, analysis, isLoading, error, onClose }: 
         )}
 
         {analysis && !isLoading && (
-          <div className="space-y-4">
-            {/* Word Sum */}
+          <div className="space-y-5">
+            {/* Bases */}
             <section>
-              <h3 className="text-xs font-semibold uppercase text-gray-400 mb-1">Word Sum</h3>
-              <p className="text-xl font-mono font-bold text-gray-800">{analysis.wordSum}</p>
-            </section>
-
-            {/* Morpheme chips */}
-            <section>
-              <h3 className="text-xs font-semibold uppercase text-gray-400 mb-2">Morphemes</h3>
+              <h3 className="text-xs font-semibold uppercase text-gray-400 mb-2">Base</h3>
               <div className="flex flex-wrap gap-2">
-                {analysis.morphemes.map((m, i) => (
+                {analysis.matrix.bases.map((b, i) => (
                   <span
                     key={i}
-                    className={[
-                      'px-3 py-1 rounded-full text-sm font-semibold',
-                      m.type === 'prefix' && 'bg-blue-100 text-blue-800',
-                      m.type === 'base' && 'bg-green-100 text-green-800',
-                      m.type === 'suffix' && 'bg-orange-100 text-orange-800',
-                    ].filter(Boolean).join(' ')}
+                    className="px-3 py-1.5 rounded-full text-sm font-semibold bg-green-100 text-green-800"
                   >
-                    {m.text}
-                    {m.meaning && (
-                      <span className="ml-1 font-normal text-xs opacity-70">({m.meaning})</span>
-                    )}
+                    {b.text}
+                    <span className="ml-1 font-normal text-xs opacity-70">({b.meaning})</span>
                   </span>
                 ))}
               </div>
             </section>
 
-            {/* Etymology */}
-            {analysis.etymology && (
+            {/* Prefixes */}
+            {analysis.matrix.prefixes.length > 0 && (
               <section>
-                <h3 className="text-xs font-semibold uppercase text-gray-400 mb-1">Etymology</h3>
-                <p className="text-sm text-gray-700">{analysis.etymology}</p>
-              </section>
-            )}
-
-            {/* Word Family */}
-            {analysis.wordFamily && analysis.wordFamily.length > 0 && (
-              <section>
-                <h3 className="text-xs font-semibold uppercase text-gray-400 mb-2">Word Family</h3>
-                <div className="flex flex-wrap gap-1">
-                  {analysis.wordFamily.map((w, i) => (
-                    <span key={i} className="px-2 py-0.5 bg-purple-50 text-purple-700 rounded text-sm">
-                      {w}
+                <h3 className="text-xs font-semibold uppercase text-gray-400 mb-2">Prefixes</h3>
+                <div className="flex flex-wrap gap-2">
+                  {analysis.matrix.prefixes.map((p, i) => (
+                    <span
+                      key={i}
+                      className="px-3 py-1.5 rounded-full text-sm font-semibold bg-blue-100 text-blue-800"
+                    >
+                      {p.text}-
+                      <span className="ml-1 font-normal text-xs opacity-70">({p.meaning})</span>
                     </span>
                   ))}
                 </div>
               </section>
             )}
 
-            {/* Phonology */}
-            {analysis.phonologyNote && (
+            {/* Suffixes */}
+            {analysis.matrix.suffixes.length > 0 && (
               <section>
-                <h3 className="text-xs font-semibold uppercase text-gray-400 mb-1">Phonology</h3>
-                <p className="text-sm text-gray-700">{analysis.phonologyNote}</p>
+                <h3 className="text-xs font-semibold uppercase text-gray-400 mb-2">Suffixes</h3>
+                <div className="flex flex-wrap gap-2">
+                  {analysis.matrix.suffixes.map((s, i) => (
+                    <span
+                      key={i}
+                      className="px-3 py-1.5 rounded-full text-sm font-semibold bg-orange-100 text-orange-800"
+                    >
+                      -{s.text}
+                      <span className="ml-1 font-normal text-xs opacity-70">({s.meaning})</span>
+                    </span>
+                  ))}
+                </div>
               </section>
             )}
           </div>
