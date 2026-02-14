@@ -32,12 +32,18 @@ export async function POST(req: NextRequest) {
     const scriptPath = path.join(process.cwd(), "scripts", "extract_words.py");
     const { stdout } = await execFileAsync(python, [scriptPath, pdfPath], {
       maxBuffer: 50 * 1024 * 1024, // 50 MB for large PDFs
+      env: { ...process.env },
     });
     pagesData = JSON.parse(stdout);
-  } catch (err) {
-    console.error("Python extraction failed:", err);
+  } catch (err: unknown) {
+    const detail = err instanceof Error ? err.message : String(err);
+    const stderr = (err as { stderr?: string }).stderr || "";
+    console.error("Python extraction failed:", detail, stderr);
     await fs.rm(bookDir, { recursive: true, force: true });
-    return Response.json({ error: "Failed to extract text from PDF" }, { status: 500 });
+    return Response.json(
+      { error: `Failed to extract text from PDF: ${stderr || detail}` },
+      { status: 500 }
+    );
   }
 
   // Clean up temp PDF
