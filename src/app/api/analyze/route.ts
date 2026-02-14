@@ -6,6 +6,7 @@ import type { AnalyzeRequest, AnalyzeResponse, SWIAnalysis } from '@/types/book'
 import { getCachedAnalysis, setCachedAnalysis } from '@/lib/wordCache';
 
 const execFileAsync = promisify(execFile);
+const python = process.platform === 'win32' ? 'python' : 'python3';
 
 interface PythonOutput {
   definition: string;
@@ -20,7 +21,7 @@ async function analyzeWord(word: string, context?: { bookTitle?: string; pageTex
   if (context?.bookTitle || context?.pageText) {
     args.push(JSON.stringify(context));
   }
-  const { stdout } = await execFileAsync('python3', args, {
+  const { stdout } = await execFileAsync(python, args, {
     maxBuffer: 10 * 1024 * 1024,
     env: { ...process.env },
     timeout: 60000,

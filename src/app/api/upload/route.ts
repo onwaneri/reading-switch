@@ -6,6 +6,7 @@ import { execFile } from "child_process";
 import { promisify } from "util";
 
 const execFileAsync = promisify(execFile);
+const python = process.platform === "win32" ? "python" : "python3";
 
 export async function POST(req: NextRequest) {
   const formData = await req.formData();
@@ -29,7 +30,7 @@ export async function POST(req: NextRequest) {
   let pagesData: Array<{ pageNumber: number; words: Array<{ text: string; x: number; y: number; width: number; height: number }> }>;
   try {
     const scriptPath = path.join(process.cwd(), "scripts", "extract_words.py");
-    const { stdout } = await execFileAsync("python3", [scriptPath, pdfPath], {
+    const { stdout } = await execFileAsync(python, [scriptPath, pdfPath], {
       maxBuffer: 50 * 1024 * 1024, // 50 MB for large PDFs
     });
     pagesData = JSON.parse(stdout);

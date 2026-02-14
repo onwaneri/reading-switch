@@ -6,10 +6,11 @@ Built at TreeHacks 2025.
 
 ## Setup
 
-**Prerequisites:** Node.js 18+, Python 3 with `pdfminer.six` (`pip install pdfminer.six`)
+**Prerequisites:** Node.js 18+, Python 3
 
 ```bash
 npm install
+pip install -r requirements.txt
 ```
 
 Create `.env.local` with your Anthropic API key:
