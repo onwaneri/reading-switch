@@ -17,3 +17,35 @@ export interface Book {
   title: string;
   pages: BookPage[];
 }
+
+// SWI Analysis Types
+
+export type DepthLevel = 'simple' | 'standard' | 'deep' | 'full';
+
+export interface Morpheme {
+  text: string;
+  type: 'prefix' | 'base' | 'suffix';
+  meaning?: string;
+}
+
+export interface SWIAnalysis {
+  word: string;
+  depth: DepthLevel;
+  wordSum: string;
+  morphemes: Morpheme[];
+  etymology?: string;
+  wordFamily?: string[];
+  phonologyNote?: string;
+  wordMatrix?: string;
+}
+
+// API Contracts
+
+export interface AnalyzeRequest {
+  word: string;
+  depth: DepthLevel;
+}
+
+export interface AnalyzeResponse {
+  analysis: SWIAnalysis;
+}
