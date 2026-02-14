@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect, useCallback, Suspense } from 'react';
+import { useState, useEffect, useCallback, useRef, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import type { Book, WordPosition, SWIAnalysis, DepthLevel } from '@/types/book';
+import type { Book, BookPage as BookPageType, WordPosition, SWIAnalysis, DepthLevel } from '@/types/book';
 import { BookPage } from '@/components/BookPage';
 import { SWIPanel } from '@/components/SWIPanel';
 import { DepthSelector } from '@/components/DepthSelector';
@@ -18,6 +18,11 @@ function ReaderContent() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisError, setAnalysisError] = useState<string | null>(null);
   const [depth, setDepth] = useState<DepthLevel>('standard');
+  const spreadRef = useRef<HTMLDivElement>(null);
+  const [spreadScale, setSpreadScale] = useState(1);
+  const isPanelOpen = selectedWord !== null;
+  const showTwoPages = !isPanelOpen;
+  const nextPage = book?.pages[currentPage + 1];
 
   // Load book data
   useEffect(() => {
@@ -28,22 +33,23 @@ function ReaderContent() {
       .catch(() => setBook(null));
   }, [bookId]);
 
-  // Arrow key navigation
+  // Arrow key navigation — step by 2 when panel closed (2-page spread), 1 when open
+  const step = selectedWord !== null ? 1 : 2;
   useEffect(() => {
     if (!book) return;
     function onKey(e: KeyboardEvent) {
       if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
         e.preventDefault();
-        setCurrentPage(p => Math.min(p + 1, book!.pages.length - 1));
+        setCurrentPage(p => Math.min(p + step, book!.pages.length - 1));
       }
       if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
         e.preventDefault();
-        setCurrentPage(p => Math.max(p - 1, 0));
+        setCurrentPage(p => Math.max(p - step, 0));
       }
     }
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [book]);
+  }, [book, step]);
 
   // Reconstruct approximate page text from word positions (reading order)
   const page = book?.pages[currentPage];
@@ -56,11 +62,12 @@ function ReaderContent() {
     : '';
 
   // Fetch analysis for a word
-  const fetchAnalysis = useCallback(async (word: WordPosition, depthLevel: DepthLevel) => {
+  const fetchAnalysis = useCallback(async (word: WordPosition, depthLevel: DepthLevel, pageTextOverride?: string) => {
     setSelectedWord(word);
     setAnalysis(null);
     setAnalysisError(null);
     setIsAnalyzing(true);
+    const textToUse = pageTextOverride ?? pageText;
 
     try {
       const res = await fetch('/api/analyze', {
@@ -70,7 +77,7 @@ function ReaderContent() {
           word: word.text,
           depth: depthLevel,
           bookTitle: book?.title,
-          pageText,
+          pageText: textToUse,
         }),
       });
       if (!res.ok) throw new Error('Analysis request failed');
@@ -83,8 +90,15 @@ function ReaderContent() {
     }
   }, [book?.title, pageText]);
 
-  const handleWordClick = useCallback((word: WordPosition) => {
-    fetchAnalysis(word, depth);
+  const handleWordClick = useCallback((word: WordPosition, page: BookPageType) => {
+    const pageIndex = page.pageNumber - 1;
+    setCurrentPage(pageIndex);
+    const pageTextForWord = page.words
+      .slice()
+      .sort((a, b) => a.y - b.y || a.x - b.x)
+      .map(w => w.text)
+      .join(' ');
+    fetchAnalysis(word, depth, pageTextForWord);
   }, [fetchAnalysis, depth]);
 
   // Re-analyze at new depth when depth changes with a word selected
@@ -100,6 +114,28 @@ function ReaderContent() {
     setAnalysis(null);
     setAnalysisError(null);
   };
+
+  // Scale the 2-page spread as a unit to fit viewport (keeps pages touching)
+  useEffect(() => {
+    if (!showTwoPages || !nextPage || !spreadRef.current) return;
+    const el = spreadRef.current;
+    const parent = el.parentElement;
+    if (!parent) return;
+    const measure = () => {
+      const maxW = parent.clientWidth;
+      const maxH = parent.clientHeight;
+      const { scrollWidth, scrollHeight } = el;
+      if (maxW > 0 && maxH > 0 && scrollWidth > 0 && scrollHeight > 0) {
+        const scale = Math.min(1, maxW / scrollWidth, maxH / scrollHeight);
+        setSpreadScale(scale);
+      }
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(parent);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [showTwoPages, nextPage, page]);
 
   if (!bookId) {
     return (
@@ -118,14 +154,12 @@ function ReaderContent() {
     );
   }
 
-  const isPanelOpen = selectedWord !== null;
-
   return (
-    <div className="min-h-screen bg-amber-50 flex flex-col">
+    <div className="h-screen bg-amber-50 flex flex-col overflow-hidden">
       {/* Toolbar */}
-      <header className="flex items-center justify-between px-6 py-3 bg-white border-b shadow-sm">
+      <header className="flex-shrink-0 flex items-center justify-between px-6 py-3 bg-white border-b shadow-sm">
         <button
-          onClick={() => setCurrentPage(p => Math.max(p - 1, 0))}
+          onClick={() => setCurrentPage(p => Math.max(p - step, 0))}
           disabled={currentPage === 0}
           className="px-4 py-2 rounded-lg bg-purple-100 text-purple-700 disabled:opacity-30 cursor-pointer disabled:cursor-default"
         >
@@ -140,7 +174,7 @@ function ReaderContent() {
         </div>
 
         <button
-          onClick={() => setCurrentPage(p => Math.min(p + 1, book.pages.length - 1))}
+          onClick={() => setCurrentPage(p => Math.min(p + step, book.pages.length - 1))}
           disabled={currentPage === book.pages.length - 1}
           className="px-4 py-2 rounded-lg bg-purple-100 text-purple-700 disabled:opacity-30 cursor-pointer disabled:cursor-default"
         >
@@ -148,21 +182,47 @@ function ReaderContent() {
         </button>
       </header>
 
-      {/* Main content area — shifts left when panel is open */}
+      {/* Main content area — explicit viewport height so pages fit without scroll */}
       <main
         className={[
-          'flex-1 flex justify-center items-start p-6 transition-all duration-300',
+          'flex-1 min-h-0 flex justify-center items-center p-4 overflow-hidden transition-all duration-300',
           isPanelOpen ? 'pr-[27%]' : '',
         ].join(' ')}
       >
-        <div className="w-full max-w-3xl">
-          {page && (
-            <BookPage
-              page={page}
-              selectedWord={selectedWord}
-              onWordClick={handleWordClick}
-            />
-          )}
+        <div
+          className={[
+            'h-full w-full flex justify-center items-center overflow-hidden',
+            showTwoPages ? 'max-w-6xl' : 'max-w-3xl',
+          ].join(' ')}
+        >
+          {page && showTwoPages && nextPage ? (
+            <div
+              ref={spreadRef}
+              className="flex flex-row shrink-0 origin-center"
+              style={{ transform: `scale(${spreadScale})` }}
+            >
+              <BookPage
+                page={page}
+                selectedWord={selectedWord}
+                onWordClick={handleWordClick}
+                compact
+              />
+              <BookPage
+                page={nextPage}
+                selectedWord={null}
+                onWordClick={handleWordClick}
+                compact
+              />
+            </div>
+          ) : page ? (
+            <div className="w-full h-full flex items-center justify-center">
+              <BookPage
+                page={page}
+                selectedWord={selectedWord}
+                onWordClick={handleWordClick}
+              />
+            </div>
+          ) : null}
         </div>
       </main>
 
