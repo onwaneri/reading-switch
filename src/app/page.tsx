@@ -42,7 +42,7 @@ export default function LoginPage() {
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-amber-50">
-        <div className="text-purple-800 text-xl">Loading...</div>
+        <div className="text-red-500 text-xl">Loading...</div>
       </div>
     );
   }
@@ -51,8 +51,8 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-amber-50">
       <div className="max-w-md w-full px-8">
         <div className="bg-white rounded-lg shadow-md p-8">
-          <h1 className="text-4xl font-bold text-purple-800 mb-2 text-center">
-            Reading SWItch
+          <h1 className="text-4xl font-bold text-red-500 mb-2 text-center">
+            Welcome to Switch
           </h1>
           <p className="text-gray-600 mb-8 text-center">
             {isRegister ? 'Create your account' : 'Sign in to your account'}
@@ -68,7 +68,7 @@ export default function LoginPage() {
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
                 placeholder="Enter username"
                 required
                 autoComplete="username"
@@ -84,7 +84,7 @@ export default function LoginPage() {
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
                 placeholder="Enter password"
                 required
                 autoComplete={isRegister ? 'new-password' : 'current-password'}
@@ -98,7 +98,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full px-6 py-3 bg-purple-700 text-white rounded-lg hover:bg-purple-800 transition disabled:bg-gray-400 disabled:cursor-not-allowed"
+              className="w-full px-6 py-3 bg-red-500 text-white rounded-lg hover:bg-red-600 transition disabled:bg-gray-400 disabled:cursor-not-allowed"
             >
               {loading ? 'Please wait...' : isRegister ? 'Register' : 'Login'}
             </button>
@@ -111,7 +111,7 @@ export default function LoginPage() {
                 setIsRegister(!isRegister);
                 setError('');
               }}
-              className="text-purple-700 hover:text-purple-800 text-sm font-medium"
+              className="text-red-500 hover:text-red-600 text-sm font-medium"
             >
               {isRegister
                 ? 'Already have an account? Login'

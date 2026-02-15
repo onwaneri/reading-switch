@@ -15,7 +15,10 @@ interface BookPageProps {
 export function BookPage({ page, pdfUrl, selectedWord, onWordClick, compact }: BookPageProps) {
   return (
     <div className={compact ? 'flex-none flex items-center justify-center' : 'w-full h-full min-h-0 flex items-center justify-center'}>
-      <div className="relative max-h-[calc(100vh-6rem)] max-w-full w-max block">
+      <div
+        className="relative max-h-[calc(100vh-6rem)] max-w-full w-max block"
+        onClick={(e) => e.stopPropagation()}
+      >
         {pdfUrl ? (
           <PDFPageRenderer
             pdfUrl={pdfUrl}

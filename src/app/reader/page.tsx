@@ -20,17 +20,18 @@ function ReaderContent() {
   const [bookLoading, setBookLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(0);
   const [selectedWord, setSelectedWord] = useState<WordPosition | null>(null);
+  const [showSidebar, setShowSidebar] = useState(false);
   const [analysis, setAnalysis] = useState<SWIAnalysis | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisError, setAnalysisError] = useState<string | null>(null);
-  const depth: DepthLevel = 'standard';
+  const depth: DepthLevel = 'deep';
   const spreadRef = useRef<HTMLDivElement>(null);
   const [spreadScale, setSpreadScale] = useState(1);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [inLibrary, setInLibrary] = useState(false);
   const [checkingLibrary, setCheckingLibrary] = useState(true);
   const { reset: resetChat } = useSocraticChat();
-  const isPanelOpen = selectedWord !== null;
+  const isPanelOpen = showSidebar;
   const showTwoPages = !isPanelOpen;
   const nextPage = book?.pages[currentPage + 1];
 
@@ -180,6 +181,7 @@ function ReaderContent() {
   // Fetch analysis for a word
   const fetchAnalysis = useCallback(async (word: WordPosition, depthLevel: DepthLevel, pageTextOverride?: string) => {
     setSelectedWord(word);
+    setShowSidebar(true);
     setAnalysis(null);
     setAnalysisError(null);
     setIsAnalyzing(true);
@@ -232,11 +234,19 @@ function ReaderContent() {
   }, [depth]);
 
   const handleClosePanel = () => {
-    setSelectedWord(null);
+    setShowSidebar(false);
     setAnalysis(null);
     setAnalysisError(null);
     resetChat();
   };
+
+  // Clear selected word when page changes
+  useEffect(() => {
+    setSelectedWord(null);
+    setShowSidebar(false);
+    setAnalysis(null);
+    setAnalysisError(null);
+  }, [currentPage]);
 
   // Scale the 2-page spread as a unit to fit viewport (keeps pages touching)
   useEffect(() => {
@@ -307,81 +317,64 @@ function ReaderContent() {
   }
 
   return (
-    <div className="h-screen bg-amber-50 flex flex-col overflow-hidden">
-      {/* Toolbar */}
-      <header className="flex-shrink-0 flex items-center justify-between px-6 py-3 bg-white border-b shadow-sm">
-        <div className="flex items-center gap-3">
-          {/* Arrow navigation with page number input */}
-          <div className="flex items-center gap-1 bg-gray-50 rounded-lg p-1">
-            <button
-              onClick={() => setCurrentPage(p => Math.max(p - step, 0))}
-              disabled={currentPage === 0}
-              className="p-2 rounded hover:bg-gray-200 disabled:opacity-30 disabled:cursor-not-allowed transition"
-              title="Previous page"
-            >
-              ←
-            </button>
-            <input
-              type="number"
-              min="1"
-              max={book.pages.length}
-              value={currentPage + 1}
-              onChange={(e) => {
-                const page = parseInt(e.target.value) - 1;
-                if (page >= 0 && page < book.pages.length) {
-                  setCurrentPage(page);
-                }
-              }}
-              className="w-16 px-2 py-1 text-center border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-purple-500"
-              title="Enter page number"
-            />
-            <button
-              onClick={() => setCurrentPage(p => Math.min(p + step, book.pages.length - 1))}
-              disabled={currentPage >= book.pages.length - step}
-              className="p-2 rounded hover:bg-gray-200 disabled:opacity-30 disabled:cursor-not-allowed transition"
-              title="Next page"
-            >
-              →
-            </button>
-          </div>
-
+    <div className="h-screen flex flex-col overflow-hidden" style={{ background: '#FFF9EE' }}>
+      {/* Header */}
+      <header
+        className="flex-shrink-0 flex flex-row justify-between items-center py-[10px] px-6 isolate"
+        style={{
+          height: '50px',
+          background: '#FFF9EE',
+          boxShadow: '0px 4px 5.3px rgba(0, 0, 0, 0.25)'
+        }}
+      >
+        {/* Switch text - far left */}
+        <div className="flex items-center px-[5px] py-0" style={{ zIndex: 1 }}>
           <button
-            onClick={() => setIsSearchOpen(true)}
-            className="px-3 py-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition"
-            title="Search pages"
+            onClick={() => window.location.href = '/library'}
+            className="font-bold text-center cursor-pointer hover:opacity-80 transition"
+            style={{
+              fontFamily: 'system-ui, -apple-system, sans-serif',
+              fontSize: '32px',
+              lineHeight: '47px',
+              color: '#061B2E'
+            }}
           >
-            🔍
+            Switch
           </button>
         </div>
 
-        <div className="flex flex-col items-center gap-1">
-          <span className="text-sm text-gray-500 font-medium">
+        {/* Book title - center */}
+        <div className="flex items-center justify-center">
+          <span className="text-red-500 font-bold text-lg">
             {book.title}
           </span>
         </div>
 
-        <div className="flex items-center gap-2">
-          {user && (
-            <>
-              <button
-                onClick={() => window.location.href = '/library'}
-                className="px-4 py-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition"
-              >
-                Back to Library
-              </button>
-              <button
-                onClick={handleToggleLibrary}
-                disabled={checkingLibrary}
-                className={`px-4 py-2 rounded-lg transition ${
-                  inLibrary
-                    ? 'bg-red-100 text-red-700 hover:bg-red-200'
-                    : 'bg-green-100 text-green-700 hover:bg-green-200'
-                } disabled:opacity-50 disabled:cursor-not-allowed`}
-              >
-                {checkingLibrary ? '...' : inLibrary ? 'Remove from Library' : 'Add to Library'}
-              </button>
-            </>
-          )}
+        {/* Navigation + User buttons - far right */}
+        <div className="flex items-center gap-3" style={{ zIndex: 0 }}>
+          <button
+            onClick={() => setIsSearchOpen(true)}
+            className="flex items-center justify-center"
+            style={{ width: '40px', height: '40px' }}
+            title="Search pages"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" className="w-6 h-6" style={{ color: '#061B2E' }}>
+              <circle cx="11" cy="11" r="8" />
+              <path d="m21 21-4.35-4.35" />
+            </svg>
+          </button>
+
+          <button
+            onClick={() => window.location.href = '/library'}
+            className="flex items-center justify-center"
+            style={{ width: '40px', height: '40px' }}
+            title="Library"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" className="w-6 h-6" style={{ color: '#061B2E' }}>
+              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+              <polyline points="9 22 9 12 15 12 15 22" />
+            </svg>
+          </button>
         </div>
       </header>
 
@@ -389,7 +382,7 @@ function ReaderContent() {
       <main
         className={[
           'flex-1 min-h-0 flex justify-center items-center p-4 overflow-hidden transition-all duration-500 ease-in-out',
-          isPanelOpen ? 'pr-[27%]' : '',
+          isPanelOpen ? 'pr-[27%] -ml-[120px]' : '',
         ].join(' ')}
       >
         <div
@@ -432,15 +425,53 @@ function ReaderContent() {
         </div>
       </main>
 
+      {/* Bottom Navigation */}
+      <footer className="flex-shrink-0 flex justify-center items-center py-4" style={{ background: '#FFF9EE' }}>
+        <div className="flex items-center gap-2 bg-red-500/75 rounded-lg p-2">
+          <button
+            onClick={() => setCurrentPage(p => Math.max(p - step, 0))}
+            disabled={currentPage === 0}
+            className="px-3 py-2 rounded text-white hover:bg-red-600 disabled:opacity-30 disabled:cursor-not-allowed transition font-bold text-xl"
+            title="Previous page"
+          >
+            ←
+          </button>
+          <input
+            type="number"
+            min="1"
+            max={book.pages.length}
+            value={currentPage + 1}
+            onChange={(e) => {
+              const page = parseInt(e.target.value) - 1;
+              if (page >= 0 && page < book.pages.length) {
+                setCurrentPage(page);
+              }
+            }}
+            className="w-16 px-2 py-1 text-center border-2 border-white rounded focus:outline-none focus:ring-2 focus:ring-red-700 bg-white text-red-500 font-semibold"
+            title="Enter page number"
+          />
+          <button
+            onClick={() => setCurrentPage(p => Math.min(p + step, book.pages.length - 1))}
+            disabled={currentPage >= book.pages.length - step}
+            className="px-3 py-2 rounded text-white hover:bg-red-600 disabled:opacity-30 disabled:cursor-not-allowed transition font-bold text-xl"
+            title="Next page"
+          >
+            →
+          </button>
+        </div>
+      </footer>
+
       {/* Right-side SWI Panel */}
-      <SWIPanel
-        selectedWord={selectedWord}
-        analysis={analysis}
-        isLoading={isAnalyzing}
-        error={analysisError}
-        depth={depth}
-        onClose={handleClosePanel}
-      />
+      {showSidebar && selectedWord && (
+        <SWIPanel
+          selectedWord={selectedWord}
+          analysis={analysis}
+          isLoading={isAnalyzing}
+          error={analysisError}
+          depth={depth}
+          onClose={handleClosePanel}
+        />
+      )}
 
       {/* Page Search Modal */}
       <PageSearch
