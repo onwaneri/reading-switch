@@ -18,7 +18,9 @@ load_dotenv(".local.env")
 
 
 client = Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))
-openai_client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
+openai_client = None
+if os.environ.get("OPENAI_API_KEY"):
+    openai_client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
 
 # In-memory cache for word matrices
 matrix_cache: Dict[str, dict] = {}
@@ -370,6 +372,8 @@ def generate_tts_with_syllables(word: str, output_path: str = None) -> str:
         Path to the generated audio file
     """
     try:
+        if openai_client is None:
+            raise RuntimeError("OPENAI_API_KEY not set — TTS unavailable")
         print(f"Generating TTS for word: {word}", file=sys.stderr)
 
         # Generate TTS for the word
