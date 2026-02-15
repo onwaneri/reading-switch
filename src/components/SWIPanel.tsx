@@ -15,23 +15,12 @@ interface SWIPanelProps {
   error: string | null;
   depth: DepthLevel;
   onClose: () => void;
-  /* bookTitle: string;
+  bookTitle: string;
   pageText: string;
   chatMessages: ChatMessage[];
   isChatStreaming: boolean;
   chatError: string | null;
   onChatSend: (text: string, context: ChatContext) => void;
-  isChatExpanded: boolean;
-  onToggleChatExpanded: () => void; */
-}
-
-interface SWIPanelProps {
-  selectedWord: WordPosition | null;
-  analysis: SWIAnalysis | null;
-  isLoading: boolean;
-  error: string | null;
-  depth: DepthLevel;
-  onClose: () => void;
 }
 
 
@@ -139,9 +128,17 @@ export function SWIPanel({
   error,
   depth,
   onClose,
+  bookTitle,
+  pageText,
+  chatMessages,
+  isChatStreaming,
+  chatError,
+  onChatSend,
 }: SWIPanelProps) {
   const isOpen = selectedWord !== null;
   const [activeTab, setActiveTab] = useState<TabId | null>(null);
+  const [isChatExpanded, setIsChatExpanded] = useState(false);
+  const [hasManuallyClosedTab, setHasManuallyClosedTab] = useState(false);
   const showMatrix = depth === 'standard' || depth === 'deep';
   const { isLoading: audioLoading, isReady: audioReady, loadWord, playAudio } =
     useAudioCache();
@@ -192,15 +189,26 @@ export function SWIPanel({
 
 
   useEffect(() => {
-    if (!selectedWord) setActiveTab(null);
+    if (!selectedWord) {
+      setActiveTab(null);
+      setIsChatExpanded(false);
+      setHasManuallyClosedTab(false);
+    }
   }, [selectedWord]);
 
-  // Auto-select definition tab when analysis loads
+  // Auto-select definition tab when analysis loads (only if user hasn't manually closed tabs)
   useEffect(() => {
-    if (analysis && !isLoading && !activeTab) {
+    if (analysis && !isLoading && !activeTab && !isChatExpanded && !hasManuallyClosedTab) {
       setActiveTab('definition');
     }
-  }, [analysis, isLoading, activeTab]);
+  }, [analysis, isLoading, activeTab, isChatExpanded, hasManuallyClosedTab]);
+
+  // Close all tabs when chat is expanded
+  useEffect(() => {
+    if (isChatExpanded) {
+      setActiveTab(null);
+    }
+  }, [isChatExpanded]);
 
 
   // Figma SWI Info: padding 39px 31px, gap 10px, align-items center. Margins = tabs bar width (31px).
@@ -287,7 +295,7 @@ export function SWIPanel({
         {/* Content — Figma: "Content" container - no gap when tab active, 10px gap when inactive */}
         {selectedWord && (
           <div className={[
-            'flex flex-col flex-1 min-h-0 w-full',
+            'flex flex-col flex-1 min-h-0 w-full overflow-y-auto',
             activeTab ? 'gap-0' : 'gap-2.5'
           ].join(' ')}>
             {/* Tabs container: height 44px when active (touches content), 56px when inactive */}
@@ -304,7 +312,13 @@ export function SWIPanel({
                   ].filter(Boolean).join(' ')}
                 >
                   <button
-                    onClick={() => setActiveTab(activeTab === tab.id ? null : tab.id)}
+                    onClick={() => {
+                      const isClosing = activeTab === tab.id;
+                      setActiveTab(isClosing ? null : tab.id);
+                      if (isClosing) {
+                        setHasManuallyClosedTab(true);
+                      }
+                    }}
                     className={[
                       'w-full h-11 flex items-center justify-center gap-0.5 px-2 rounded-full text-white transition-all duration-300',
                       'font-bold leading-tight break-words text-center',
@@ -327,11 +341,11 @@ export function SWIPanel({
             {/* Frame 35 / Info box — Figma: width 535px, border-radius 8px (all) OR 0 0 8px 8px (bottom only when tab active) */}
             <div
               className={[
-                'flex-shrink-0 overflow-y-auto transition-colors duration-300 flex',
-                !activeTab && 'bg-white flex-row justify-end items-end p-0 rounded-[8px] min-h-[300px]',
-                activeTab === 'definition' && 'bg-[#1C85E8] flex-col rounded-b-[8px] min-h-[320px]',
-                activeTab?.startsWith('struct') && 'bg-[#2CC8A7] flex-col rounded-b-[8px] min-h-[320px]',
-                activeTab === 'etymology' && 'bg-[#FF8082] flex-col rounded-b-[8px] min-h-[320px]',
+                'flex overflow-y-visible transition-colors duration-300',
+                !activeTab && 'bg-white flex-row justify-end items-end p-0 rounded-[8px] min-h-[100px]',
+                activeTab === 'definition' && 'bg-[#1C85E8] flex-col rounded-b-[8px]',
+                activeTab?.startsWith('struct') && 'bg-[#2CC8A7] flex-col rounded-b-[8px]',
+                activeTab === 'etymology' && 'bg-[#FF8082] flex-col rounded-b-[8px]',
               ].filter(Boolean).join(' ')}
             >
               {activeTab ? (
@@ -351,8 +365,15 @@ export function SWIPanel({
           {analysis && !isLoading && (
             <>
               {activeTab === 'definition' && (
-                <section className="text-white min-w-0">
-                  <p className="font-medium break-words" style={{ fontSize: '1.5em', lineHeight: '1.2' }}>{analysis.definition}</p>
+                <section className="text-white min-w-0 flex flex-col items-center gap-4">
+                  <p className="font-medium break-words text-center" style={{ fontSize: '1.5em', lineHeight: '1.2' }}>{analysis.definition}</p>
+                  {analysis.icon && (
+                    <img
+                      src={analysis.icon}
+                      alt={analysis.word}
+                      className="w-24 h-24 object-contain"
+                    />
+                  )}
                 </section>
               )}
 
@@ -463,34 +484,27 @@ export function SWIPanel({
           )}
                 </div>
               ) : (
-                /* Empty state - Frame 35: white background with help button at bottom-right */
-                <div className="flex-shrink-0 flex justify-end items-end p-[10px]">
-                  <button
-                    type="button"
-                    className="w-[47px] h-[47px] flex items-center justify-center rounded-full bg-[#061B2E] text-white hover:opacity-90 transition font-bold leading-none"
-                    style={{ fontSize: '30px' }}
-                    aria-label="Help"
-                    title="Help"
-                  >
-                    ?
-                  </button>
+                /* Empty state - Frame 35: white background */
+                <div className="flex-shrink-0 flex justify-center items-center p-[10px] min-h-[100px]">
+                  <p className="text-black text-base text-center">Select a tab to view the details about this word!</p>
                 </div>
               )}
             </div>
 
-
-            {/* Help container — Only shown when a tab is active */}
-            {activeTab && (
-              <div className="flex-shrink-0 flex justify-end items-end p-[10px]">
-                <button
-                  type="button"
-                  className="w-[63px] h-[63px] flex items-center justify-center rounded-full bg-[#061B2E] text-white hover:opacity-90 transition font-bold leading-none"
-                  style={{ fontSize: '40px' }}
-                  aria-label="Help"
-                  title="Help"
-                >
-                  ?
-                </button>
+            {/* Chat Assistant - Expandable section below tabs */}
+            {analysis && !isLoading && (
+              <div className="flex-shrink-0 w-full px-0 mt-2.5">
+                <ChatAssistant
+                  analysis={analysis}
+                  bookTitle={bookTitle}
+                  pageText={pageText}
+                  messages={chatMessages}
+                  isStreaming={isChatStreaming}
+                  error={chatError}
+                  onSend={onChatSend}
+                  isExpanded={isChatExpanded}
+                  onToggleExpand={() => setIsChatExpanded(!isChatExpanded)}
+                />
               </div>
             )}
           </div>

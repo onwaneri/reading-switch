@@ -30,8 +30,14 @@ function ReaderContent() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [inLibrary, setInLibrary] = useState(false);
   const [checkingLibrary, setCheckingLibrary] = useState(true);
-  const { reset: resetChat } = useSocraticChat();
-  const isPanelOpen = showSidebar;
+  const {
+    messages: chatMessages,
+    isStreaming: isChatStreaming,
+    error: chatError,
+    sendMessage: sendChatMessage,
+    reset: resetChat,
+  } = useSocraticChat();
+  const isPanelOpen = selectedWord !== null;
   const showTwoPages = !isPanelOpen;
   const nextPage = book?.pages[currentPage + 1];
 
@@ -462,16 +468,20 @@ function ReaderContent() {
       </footer>
 
       {/* Right-side SWI Panel */}
-      {showSidebar && selectedWord && (
-        <SWIPanel
-          selectedWord={selectedWord}
-          analysis={analysis}
-          isLoading={isAnalyzing}
-          error={analysisError}
-          depth={depth}
-          onClose={handleClosePanel}
-        />
-      )}
+      <SWIPanel
+        selectedWord={selectedWord}
+        analysis={analysis}
+        isLoading={isAnalyzing}
+        error={analysisError}
+        depth={depth}
+        onClose={handleClosePanel}
+        bookTitle={book?.title ?? ''}
+        pageText={pageText}
+        chatMessages={chatMessages}
+        isChatStreaming={isChatStreaming}
+        chatError={chatError}
+        onChatSend={sendChatMessage}
+      />
 
       {/* Page Search Modal */}
       <PageSearch

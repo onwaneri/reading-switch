@@ -80,14 +80,14 @@ export function ChatAssistant({
     return (
       <button
         onClick={onToggleExpand}
-        className="w-full mt-4 py-3 px-4 rounded-xl bg-purple-50 border-2 border-dashed border-purple-200 text-purple-600 font-semibold text-sm hover:bg-purple-100 hover:border-purple-300 transition cursor-pointer flex items-center justify-center gap-2"
+        className="w-full mt-4 py-3 px-4 rounded-xl bg-blue-50 border-2 border-dashed border-blue-200 text-blue-600 font-semibold text-sm hover:bg-blue-100 hover:border-blue-300 transition cursor-pointer flex items-center justify-center gap-2"
       >
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
           <path fillRule="evenodd" d="M4.848 2.771A49.144 49.144 0 0112 2.25c2.43 0 4.817.178 7.152.52 1.978.292 3.348 2.024 3.348 3.97v6.02c0 1.946-1.37 3.678-3.348 3.97a48.901 48.901 0 01-3.476.383.39.39 0 00-.297.17l-2.755 4.133a.75.75 0 01-1.248 0l-2.755-4.133a.39.39 0 00-.297-.17 48.9 48.9 0 01-3.476-.384c-1.978-.29-3.348-2.024-3.348-3.97V6.741c0-1.946 1.37-3.68 3.348-3.97z" clipRule="evenodd" />
         </svg>
         Ask me about this word!
         {messages.length > 0 && (
-          <span className="bg-purple-200 text-purple-700 text-xs rounded-full px-2 py-0.5">
+          <span className="bg-blue-200 text-blue-700 text-xs rounded-full px-2 py-0.5">
             {messages.length}
           </span>
         )}
@@ -97,7 +97,7 @@ export function ChatAssistant({
 
   // --- EXPANDED STATE ---
   return (
-    <div className="mt-4 flex flex-col border-t-2 border-purple-100 pt-3">
+    <div className="mt-4 flex flex-col border-t-2 border-blue-100 pt-3">
       {/* Header with collapse toggle */}
       <div className="flex items-center justify-between mb-2">
         <h3 className="text-xs font-semibold uppercase text-gray-400">
@@ -126,13 +126,13 @@ export function ChatAssistant({
             key={msg.id}
             className={`text-sm rounded-lg px-3 py-2 max-w-[90%] ${
               msg.role === 'user'
-                ? 'bg-purple-100 text-purple-800 ml-auto'
+                ? 'bg-blue-100 text-blue-800 ml-auto'
                 : 'bg-gray-100 text-gray-700 mr-auto'
             }`}
           >
             {msg.content}
             {msg.role === 'assistant' && msg.content === '' && isStreaming && (
-              <span className="inline-block w-2 h-4 bg-purple-400 rounded-sm animate-pulse ml-0.5" />
+              <span className="inline-block w-2 h-4 bg-blue-400 rounded-sm animate-pulse ml-0.5" />
             )}
           </div>
         ))}
@@ -170,12 +170,12 @@ export function ChatAssistant({
           onKeyDown={handleKeyDown}
           placeholder="Ask a question..."
           disabled={isStreaming}
-          className="flex-1 text-sm px-3 py-2 rounded-lg border border-gray-200 focus:border-purple-300 focus:ring-1 focus:ring-purple-200 outline-none disabled:bg-gray-50 disabled:text-gray-400"
+          className="flex-1 text-sm px-3 py-2 rounded-lg border border-gray-200 focus:border-blue-300 focus:ring-1 focus:ring-blue-200 outline-none disabled:bg-gray-50 disabled:text-gray-400"
         />
         <button
           onClick={() => handleSubmit()}
           disabled={!input.trim() || isStreaming}
-          className="px-3 py-2 rounded-lg bg-purple-500 text-white disabled:bg-gray-200 disabled:text-gray-400 cursor-pointer disabled:cursor-default transition"
+          className="px-3 py-2 rounded-lg bg-blue-500 text-white disabled:bg-gray-200 disabled:text-gray-400 cursor-pointer disabled:cursor-default transition"
           aria-label="Send message"
         >
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">

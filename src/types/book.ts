@@ -16,6 +16,7 @@ export interface Book {
   id: string;
   title: string;
   pdfUrl?: string;    // URL to the PDF file for on-demand rendering
+  thumbnail?: string; // URL to the thumbnail image (first page)
   pages: BookPage[];
 }
 

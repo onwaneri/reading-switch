@@ -13,6 +13,7 @@ export async function POST(req: NextRequest) {
   const bookId = randomUUID();
   const title = (formData.get("title") as string) || "Untitled Book";
   const pdfFile = formData.get("pdf") as File | null;
+  const thumbnailFile = formData.get("page-0") as File | null; // First page thumbnail
 
   if (!pdfFile) {
     return Response.json({ error: "No PDF file received" }, { status: 400 });
@@ -25,6 +26,15 @@ export async function POST(req: NextRequest) {
   const pdfPath = path.join(bookDir, "book.pdf");
   const pdfBuffer = Buffer.from(await pdfFile.arrayBuffer());
   await fs.writeFile(pdfPath, pdfBuffer);
+
+  // Save thumbnail (first page)
+  let thumbnailUrl: string | undefined;
+  if (thumbnailFile) {
+    const thumbnailPath = path.join(bookDir, "thumbnail.png");
+    const thumbnailBuffer = Buffer.from(await thumbnailFile.arrayBuffer());
+    await fs.writeFile(thumbnailPath, thumbnailBuffer);
+    thumbnailUrl = `/books/${bookId}/thumbnail.png`;
+  }
 
   // Run pdfminer script to extract word positions
   let pagesData: Array<{ pageNumber: number; words: Array<{ text: string; x: number; y: number; width: number; height: number }> }>;
@@ -51,6 +61,7 @@ export async function POST(req: NextRequest) {
     id: bookId,
     title,
     pdfUrl: `/api/books/${bookId}/book.pdf`,
+    thumbnail: thumbnailUrl,
     pages: pagesData,
   };
   
