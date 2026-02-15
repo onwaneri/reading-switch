@@ -6,8 +6,11 @@ Uses Claude API for morphological analysis.
 import json
 import os
 import sys
+import tempfile
 from typing import Dict
 from anthropic import Anthropic
+from openai import OpenAI
+import base64
 
 from dotenv import load_dotenv
 load_dotenv(".local.env")
@@ -15,6 +18,7 @@ load_dotenv(".local.env")
 
 
 client = Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))
+openai_client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
 
 # In-memory cache for word matrices
 matrix_cache: Dict[str, dict] = {}
@@ -307,6 +311,8 @@ Return ONLY valid JSON. No markdown, no explanation."""
         }
 
 
+
+
 def get_word_matrix(word: str, context: dict = None) -> dict:
     """
     Main function to get a word matrix for any input word.
@@ -350,6 +356,72 @@ def get_word_matrix(word: str, context: dict = None) -> dict:
         "relatives": word_analysis.get("relatives", []),
         "matrix": matrix,
     }
+
+
+def generate_tts_with_syllables(word: str, output_path: str = None) -> str:
+    """
+    Generate a TTS audio file that pronounces a word.
+
+    Args:
+        word: The word to pronounce
+        output_path: Optional path for the output audio file. If None, uses temp file.
+
+    Returns:
+        Path to the generated audio file
+    """
+    try:
+        print(f"Generating TTS for word: {word}", file=sys.stderr)
+
+        # Generate TTS for the word
+        response = openai_client.audio.speech.create(
+            model="tts-1",
+            voice="alloy",  # You can change to: alloy, echo, fable, onyx, nova, shimmer
+            input=word
+        )
+
+        # Determine output path
+        if output_path is None:
+            temp_dir = tempfile.mkdtemp()
+            output_path = os.path.join(temp_dir, f"{word}_tts.mp3")
+
+        # Save the audio file
+        response.stream_to_file(output_path)
+        print(f"TTS audio generated: {output_path}", file=sys.stderr)
+
+        return output_path
+
+    except Exception as e:
+        print(f"Error generating TTS for '{word}': {e}", file=sys.stderr)
+        raise
+
+
+def generate_tts_base64(word: str) -> str:
+    """
+    Generate TTS audio and return as base64 encoded string.
+
+    Args:
+        word: The word to pronounce
+
+    Returns:
+        Base64 encoded audio data
+    """
+    try:
+        # Generate the audio file
+        audio_path = generate_tts_with_syllables(word)
+
+        # Read the file and encode to base64
+        with open(audio_path, 'rb') as audio_file:
+            audio_data = audio_file.read()
+            base64_audio = base64.b64encode(audio_data).decode('utf-8')
+
+        # Clean up the temporary file
+        os.remove(audio_path)
+
+        return base64_audio
+
+    except Exception as e:
+        print(f"Error generating base64 TTS for '{word}': {e}", file=sys.stderr)
+        raise
 
 
 # CLI: python3 main.py <word> [contextJson]

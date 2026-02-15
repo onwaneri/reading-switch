@@ -42,3 +42,15 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+*.egg-info/
+
+# generated content
+/test_output/
+*.mp3
+*.wav

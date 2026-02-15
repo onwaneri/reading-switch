@@ -1,2 +1,4 @@
 pdfminer.six
 anthropic
+openai
+python-dotenv
