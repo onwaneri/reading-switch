@@ -37,7 +37,7 @@ function ReaderContent() {
     sendMessage: sendChatMessage,
     reset: resetChat,
   } = useSocraticChat();
-  const isPanelOpen = selectedWord !== null;
+  const isPanelOpen = showSidebar;
   const showTwoPages = !isPanelOpen;
   const nextPage = book?.pages[currentPage + 1];
 
@@ -157,7 +157,7 @@ function ReaderContent() {
   };
 
   // Arrow key navigation — step by 2 when panel closed (2-page spread), 1 when open
-  const step = selectedWord !== null ? 1 : 2;
+  const step = showSidebar ? 1 : 2;
   useEffect(() => {
     if (!book) return;
     function onKey(e: KeyboardEvent) {
@@ -221,14 +221,8 @@ function ReaderContent() {
   }, [book?.title, pageText, resetChat]);
 
   const handleWordClick = useCallback((word: WordPosition, page: BookPageType) => {
-    const pageIndex = page.pageNumber - 1;
-    setCurrentPage(pageIndex);
-    const pageTextForWord = page.words
-      .slice()
-      .sort((a, b) => a.y - b.y || a.x - b.x)
-      .map(w => w.text)
-      .join(' ');
-    fetchAnalysis(word, depth, pageTextForWord);
+    // Only capture the word information, don't change pages or store extra data
+    fetchAnalysis(word, depth);
   }, [fetchAnalysis, depth]);
 
   // Re-analyze at new depth when depth changes with a word selected
@@ -390,18 +384,21 @@ function ReaderContent() {
           'flex-1 min-h-0 flex justify-center items-center p-4 overflow-hidden transition-all duration-500 ease-in-out',
           isPanelOpen ? 'pr-[27%] -ml-[120px]' : '',
         ].join(' ')}
+        onClick={(e) => e.stopPropagation()}
       >
         <div
           className={[
             'h-full w-full flex justify-center items-center overflow-hidden',
             showTwoPages ? 'max-w-6xl' : 'max-w-3xl',
           ].join(' ')}
+          onClick={(e) => e.stopPropagation()}
         >
           {page && showTwoPages && nextPage ? (
             <div
               ref={spreadRef}
               className="flex flex-row shrink-0 origin-center"
               style={{ transform: `scale(${spreadScale})` }}
+              onClick={(e) => e.stopPropagation()}
             >
               <BookPage
                 page={page}
@@ -419,7 +416,7 @@ function ReaderContent() {
               />
             </div>
           ) : page ? (
-            <div className="w-full h-full flex items-center justify-center">
+            <div className="w-full h-full flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
               <BookPage
                 page={page}
                 pdfUrl={book.pdfUrl}
@@ -475,6 +472,7 @@ function ReaderContent() {
         error={analysisError}
         depth={depth}
         onClose={handleClosePanel}
+        isOpen={showSidebar}
         bookTitle={book?.title ?? ''}
         pageText={pageText}
         chatMessages={chatMessages}

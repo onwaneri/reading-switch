@@ -89,7 +89,15 @@ export function useAudioCache(): UseAudioCacheReturn {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || `TTS generation failed: ${response.statusText}`);
+        const errorMessage = errorData.error || `TTS generation failed: ${response.statusText}`;
+        // Handle rate limit errors gracefully (check status code or error message content)
+        if (response.status === 429 || errorMessage.includes('rate limit') || errorMessage.includes('Rate limit')) {
+          console.warn('TTS rate limit reached, audio unavailable');
+          setError('Audio unavailable (rate limit)');
+          setIsLoading(false);
+          return; // Silently fail for rate limits
+        }
+        throw new Error(errorMessage);
       }
 
       const { audio, error: apiError } = await response.json();

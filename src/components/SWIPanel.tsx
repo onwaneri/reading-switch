@@ -15,6 +15,7 @@ interface SWIPanelProps {
   error: string | null;
   depth: DepthLevel;
   onClose: () => void;
+  isOpen: boolean;
   bookTitle: string;
   pageText: string;
   chatMessages: ChatMessage[];
@@ -128,6 +129,7 @@ export function SWIPanel({
   error,
   depth,
   onClose,
+  isOpen,
   bookTitle,
   pageText,
   chatMessages,
@@ -135,12 +137,11 @@ export function SWIPanel({
   chatError,
   onChatSend,
 }: SWIPanelProps) {
-  const isOpen = selectedWord !== null;
   const [activeTab, setActiveTab] = useState<TabId | null>(null);
   const [isChatExpanded, setIsChatExpanded] = useState(false);
   const [hasManuallyClosedTab, setHasManuallyClosedTab] = useState(false);
   const showMatrix = depth === 'standard' || depth === 'deep';
-  const { isLoading: audioLoading, isReady: audioReady, loadWord, playAudio } =
+  const { isLoading: audioLoading, isReady: audioReady, error: audioError, loadWord, playAudio } =
     useAudioCache();
 
 
@@ -275,13 +276,20 @@ export function SWIPanel({
               <button
                 onClick={playAudio}
                 disabled={!audioReady}
-                className="flex-shrink-0 w-[40px] h-[40px] flex items-center justify-center rounded-full bg-white text-[#061B2E] hover:bg-gray-50 border-[3.5px] border-[#061B2E] disabled:opacity-40 transition ml-4"
+                className={[
+                  "flex-shrink-0 w-[40px] h-[40px] flex items-center justify-center rounded-full bg-white text-[#061B2E] border-[3.5px] transition ml-4",
+                  audioError ? "border-red-400 opacity-40" : "border-[#061B2E] hover:bg-gray-50 disabled:opacity-40"
+                ].join(' ')}
                 aria-label="Play pronunciation"
-                title={audioReady ? 'Play pronunciation' : 'Loading...'}
+                title={audioError ? audioError : audioReady ? 'Play pronunciation' : 'Loading...'}
                 style={{ marginLeft: 'auto' }}
               >
                 {audioLoading ? (
                   <span className="block w-3 h-3 border-2 border-[#061B2E] border-t-transparent rounded-full animate-spin" />
+                ) : audioError ? (
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 text-red-400">
+                    <path fillRule="evenodd" d="M9.401 3.003c1.155-2 4.043-2 5.197 0l7.355 12.748c1.154 2-.29 4.5-2.599 4.5H4.645c-2.309 0-3.752-2.5-2.598-4.5L9.4 3.003zM12 8.25a.75.75 0 01.75.75v3.75a.75.75 0 01-1.5 0V9a.75.75 0 01.75-.75zm0 8.25a.75.75 0 100-1.5.75.75 0 000 1.5z" clipRule="evenodd" />
+                  </svg>
                 ) : (
                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
                     <path d="M11.553 3.064A.75.75 0 0112 3.75v16.5a.75.75 0 01-1.255.555L5.46 16H2.75A.75.75 0 012 15.25v-6.5A.75.75 0 012.75 8H5.46l5.285-4.805a.75.75 0 01.808-.131z" />
