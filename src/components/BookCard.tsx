@@ -17,7 +17,13 @@ export function BookCard({ bookId, title, thumbnail, pdfUrl, onClick }: BookCard
       className="flex-shrink-0 w-48 bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition cursor-pointer overflow-hidden"
     >
       <div className="aspect-[3/4] bg-gradient-to-br from-purple-100 to-amber-100 flex items-center justify-center relative overflow-hidden">
-        {pdfUrl ? (
+        {thumbnail ? (
+          <img
+            src={thumbnail}
+            alt={title}
+            className="absolute inset-0 w-full h-full object-cover"
+          />
+        ) : pdfUrl ? (
           <PDFThumbnail
             pdfUrl={pdfUrl}
             className="absolute inset-0 w-full h-full object-cover"
