@@ -1,1 +1,38 @@
-[]
+[
+  {
+    "bookId": "e11569d4-fcb6-4774-902c-903fe43e10a4",
+    "title": "A Tale of Two Cities",
+    "originalPath": "A Tale of Two Cities.pdf",
+    "processedDate": "2026-02-15T03:21:55.587Z"
+  },
+  {
+    "bookId": "f34000b9-0f87-4884-9f5a-1b2a0816a19e",
+    "title": "Frankenstein",
+    "originalPath": "Frankenstein.pdf",
+    "processedDate": "2026-02-15T03:21:57.449Z"
+  },
+  {
+    "bookId": "afa4adb8-adf4-4dc2-b955-cc3d68a7132b",
+    "title": "Little Women",
+    "originalPath": "Little Women.pdf",
+    "processedDate": "2026-02-15T03:22:46.804Z"
+  },
+  {
+    "bookId": "67d5a9de-7c25-4183-b205-fd038e814cfe",
+    "title": "Pride and Prejudice",
+    "originalPath": "Pride and Prejudice.pdf",
+    "processedDate": "2026-02-15T03:24:03.669Z"
+  },
+  {
+    "bookId": "c00f2888-1a51-4368-82fe-94b13167ee99",
+    "title": "The Great Gatsby",
+    "originalPath": "The Great Gatsby.pdf",
+    "processedDate": "2026-02-15T03:24:18.662Z"
+  },
+  {
+    "bookId": "c2ad39eb-90bb-471e-b96b-d003e89376af",
+    "title": "The Picture of Dorian Gray",
+    "originalPath": "The Picture of Dorian Gray.pdf",
+    "processedDate": "2026-02-15T03:24:42.851Z"
+  }
+]

@@ -11,8 +11,13 @@ const python = process.platform === 'win32' ? 'python' : 'python3';
 interface PythonOutput {
   definition: string;
   wordSum: string;
+  etymology: string;
   relatives: string[];
-  matrix: { bases: { text: string; meaning: string }[]; prefixes: { text: string; meaning: string }[]; suffixes: { text: string; meaning: string }[] };
+  matrix: {
+    bases: { text: string; meaning: string; iconUrl?: string }[];
+    prefixes: { text: string; meaning: string; iconUrl?: string }[];
+    suffixes: { text: string; meaning: string; iconUrl?: string }[]
+  };
 }
 
 async function analyzeWord(word: string, context?: { bookTitle?: string; pageText?: string }): Promise<PythonOutput> {
@@ -49,19 +54,29 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const result = await analyzeWord(word, { bookTitle, pageText });
+    console.log('[Analyze API] Calling Python script for word:', word);
+    const result = await analyzeWord(word, { bookTitle, pageText});
+    console.log('[Analyze API] Python result:', result);
+
+    // Python script now handles icon fetching with OAuth1
     const analysis: SWIAnalysis = {
       word,
       depth,
       definition: result.definition,
       wordSum: result.wordSum,
+      etymology: result.etymology || 'Etymology unavailable',
       relatives: result.relatives,
       matrix: result.matrix,
     };
     setCachedAnalysis(word, depth, analysis);
     return Response.json({ analysis } satisfies AnalyzeResponse);
   } catch (err) {
-    console.error('Analysis failed:', err);
-    return Response.json({ error: 'Analysis failed' }, { status: 500 });
+    console.error('[Analyze API] Analysis failed:', err);
+    const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+    const errorStack = err instanceof Error ? err.stack : '';
+    console.error('[Analyze API] Error details:', { errorMessage, errorStack });
+    return Response.json({
+      error: `Analysis failed: ${errorMessage}`
+    }, { status: 500 });
   }
 }

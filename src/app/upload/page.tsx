@@ -59,21 +59,13 @@ export default function UploadPage() {
 
     setError('');
     setUploading(true);
-    setProcessingPage(0);
-    setTotalPages(0);
+    setProcessingPage(1);
+    setTotalPages(1);
 
     try {
-      const pageBlobs = await renderPdfPages(file, (completed, total) => {
-        setProcessingPage(completed);
-        setTotalPages(total);
-      });
-
       const formData = new FormData();
       formData.append('title', file.name.replace('.pdf', ''));
       formData.append('pdf', file);
-      pageBlobs.forEach((blob, i) => {
-        formData.append(`page-${i}`, blob, `page-${i}.png`);
-      });
 
       const res = await fetch('/api/upload', {
         method: 'POST',
@@ -125,7 +117,7 @@ export default function UploadPage() {
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold text-purple-800">Add Book</h1>
           <button
-            onClick={() => router.push('/dashboard')}
+            onClick={() => router.push('/library')}
             className="text-gray-500 hover:text-gray-700 text-2xl"
           >
             ×
@@ -165,21 +157,15 @@ export default function UploadPage() {
           </span>
         </label>
 
-        {(uploading || totalPages > 0) && (
+        {uploading && (
           <div className="mt-8">
             <div className="flex justify-between items-center mb-2">
               <span className="text-sm text-gray-600">
-                {processingPage < totalPages
-                  ? `Rendering page ${processingPage + 1}/${totalPages}...`
-                  : 'Extracting words...'}
+                Processing PDF...
               </span>
-              <span className="text-sm font-semibold text-purple-700">{progress}%</span>
             </div>
             <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
-              <div
-                className="h-full bg-amber-500 transition-all duration-300"
-                style={{ width: `${progress}%` }}
-              ></div>
+              <div className="h-full bg-amber-500 transition-all duration-300 animate-pulse w-full"></div>
             </div>
           </div>
         )}

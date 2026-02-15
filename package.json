@@ -9,7 +9,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "setup-books": "node scripts/setup-simple.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.74.0",

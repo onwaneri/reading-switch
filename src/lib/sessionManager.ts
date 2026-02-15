@@ -3,7 +3,12 @@ import { randomUUID } from 'crypto';
 import { Session, User } from '@/types/auth';
 import { findUserById } from './userManager';
 
-const sessions = new Map<string, Session>();
+// Use global to persist sessions across hot reloads in development
+const globalForSessions = global as unknown as { sessions: Map<string, Session> };
+const sessions = globalForSessions.sessions || new Map<string, Session>();
+if (process.env.NODE_ENV !== 'production') {
+  globalForSessions.sessions = sessions;
+}
 
 const SESSION_DURATION = 7 * 24 * 60 * 60 * 1000; // 7 days
 

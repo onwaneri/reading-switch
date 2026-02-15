@@ -16,7 +16,7 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (!authLoading && user) {
-      router.push('/dashboard');
+      router.push('/library');
     }
   }, [user, authLoading, router]);
 
@@ -31,7 +31,7 @@ export default function LoginPage() {
       } else {
         await login(username, password);
       }
-      router.push('/dashboard');
+      router.push('/library');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {

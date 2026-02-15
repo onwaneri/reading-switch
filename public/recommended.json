@@ -1,0 +1,32 @@
+[
+  {
+    "id": "book-1",
+    "title": "A Tale of Two Cities",
+    "pdfUrl": "/recommended/book1.pdf"
+  },
+  {
+    "id": "book-2",
+    "title": "The Metamorphosis",
+    "pdfUrl": "/recommended/book2.pdf"
+  },
+  {
+    "id": "book-3",
+    "title": "The Monkey's Paw",
+    "pdfUrl": "/recommended/book3.pdf"
+  },
+  {
+    "id": "book-4",
+    "title": "Pride and Prejudice",
+    "pdfUrl": "/recommended/book4.pdf"
+  },
+  {
+    "id": "book-5",
+    "title": "The Great Gatsby",
+    "pdfUrl": "/recommended/book5.pdf"
+  },
+  {
+    "id": "book-6",
+    "title": "The Picture of Dorian Gray",
+    "pdfUrl": "/recommended/book6.pdf"
+  }
+]
