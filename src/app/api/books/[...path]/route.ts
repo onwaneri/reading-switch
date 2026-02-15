@@ -4,6 +4,7 @@ import fs from 'fs/promises';
 
 const MIME_TYPES: Record<string, string> = {
   '.json': 'application/json',
+  '.pdf': 'application/pdf',
   '.png': 'image/png',
   '.jpg': 'image/jpeg',
   '.jpeg': 'image/jpeg',

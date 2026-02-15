@@ -92,7 +92,7 @@ export async function initializeRecommendedBooks() {
         const bookData = {
           id: bookId,
           title,
-          pdfUrl: `/books/${bookId}/book.pdf`,
+          pdfUrl: `/api/books/${bookId}/book.pdf`,
           pages: pagesData,
         };
         await fs.writeFile(

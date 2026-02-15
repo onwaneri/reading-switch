@@ -9,7 +9,7 @@ const python = process.platform === 'win32' ? 'python' : 'python3';
 
 function getEnvForTTS(): NodeJS.ProcessEnv {
   const env = { ...process.env };
-  const envPath = path.join(process.cwd(), '.local.env');
+  const envPath = path.join(process.cwd(), '.env.local');
   try {
     if (fs.existsSync(envPath)) {
       const content = fs.readFileSync(envPath, 'utf8');
@@ -42,7 +42,7 @@ async function generateTTS(word: string): Promise<string> {
   try {
     const { stdout, stderr } = await execFileAsync(python, args, {
       maxBuffer: 50 * 1024 * 1024, // 50MB buffer for audio data
-      env: { ...process.env },
+      env: getEnvForTTS(),
       timeout: 120000, // 2 minutes timeout for audio generation
     });
 

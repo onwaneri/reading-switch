@@ -42,7 +42,7 @@ function ReaderContent() {
     setBookLoading(true);
     setBookError(null);
 
-    fetch(`/books/${bookId}/book.json`)
+    fetch(`/api/books/${bookId}/book.json`)
       .then(r => {
         if (!r.ok) {
           throw new Error(`HTTP ${r.status}: ${r.statusText}`);
