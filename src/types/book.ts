@@ -49,6 +49,8 @@ export interface SWIAnalysis {
   etymology: string;
   relatives: string[];
   matrix: WordMatrix;
+  icon?: string;
+  visualConcept?: string;
 }
 
 // API Contracts
