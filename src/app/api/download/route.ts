@@ -21,21 +21,21 @@ export async function POST(request: NextRequest) {
     const scriptPath = path.join(process.cwd(), 'scripts', 'download_archive.py');
 
     const result = await new Promise<string>((resolve, reject) => {
-      const process = spawn('python', [scriptPath, identifier], {
+      const proc = spawn('python', [scriptPath, identifier], {
         cwd: process.cwd(),
       });
       let stdout = '';
       let stderr = '';
 
-      process.stdout.on('data', (data) => {
+      proc.stdout.on('data', (data) => {
         stdout += data.toString();
       });
 
-      process.stderr.on('data', (data) => {
+      proc.stderr.on('data', (data) => {
         stderr += data.toString();
       });
 
-      process.on('close', (code) => {
+      proc.on('close', (code) => {
         if (code !== 0) {
           reject(new Error(`Download failed: ${stderr}`));
         } else {

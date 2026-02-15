@@ -13,19 +13,19 @@ export async function POST(request: NextRequest) {
     const scriptPath = path.join(process.cwd(), 'scripts', 'search_archive.py');
 
     const results = await new Promise<string>((resolve, reject) => {
-      const process = spawn('python', [scriptPath, query]);
+      const proc = spawn('python', [scriptPath, query]);
       let stdout = '';
       let stderr = '';
 
-      process.stdout.on('data', (data) => {
+      proc.stdout.on('data', (data) => {
         stdout += data.toString();
       });
 
-      process.stderr.on('data', (data) => {
+      proc.stderr.on('data', (data) => {
         stderr += data.toString();
       });
 
-      process.on('close', (code) => {
+      proc.on('close', (code) => {
         if (code !== 0) {
           reject(new Error(`Search failed: ${stderr}`));
         } else {
