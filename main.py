@@ -9,6 +9,10 @@ import sys
 from typing import Dict
 from anthropic import Anthropic
 
+from dotenv import load_dotenv
+load_dotenv(".local.env")
+
+
 
 client = Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))
 
@@ -238,7 +242,7 @@ IMPORTANT: Return ONLY valid JSON with verified morphemes. No markdown, no expla
 
 def analyze_word_in_context(word: str, base: str, context: dict = None) -> dict:
     """
-    Analyze a specific word: definition, word sum, and relatives.
+    Analyze a specific word: definition, word sum, etymology, and relatives.
 
     Args:
         word: The original word tapped by the user
@@ -246,7 +250,7 @@ def analyze_word_in_context(word: str, base: str, context: dict = None) -> dict:
         context: Optional dict with bookTitle and pageText for better definitions
 
     Returns:
-        Dictionary with definition, wordSum, and relatives
+        Dictionary with definition, wordSum, etymology, and relatives
     """
     # Build context section for the prompt
     context_section = ""
@@ -265,21 +269,22 @@ def analyze_word_in_context(word: str, base: str, context: dict = None) -> dict:
 
 Analyze the word "{word}" which has the base morpheme(s) "{base}".
 {context_section}
-Return a JSON object with exactly these three fields:
+Return a JSON object with exactly these four fields:
 
 1. "definition": A brief, kid-friendly definition (1 sentence, simple language). If story context is provided, make the definition relevant to how the word is used in that story.
 2. "wordSum": The word sum showing how "{word}" is built from its morphemes, separated by " + ". Use the ACTUAL morphemes (prefixes, base, suffixes). Example: "con + struct + ion" for "construction", "un + happy + ness" for "unhappiness", "re + play" for "replay". If the word IS the base with no affixes, just return the base itself.
-3. "relatives": A list of 4-6 common English words built from the same base "{base}". Only include real, common words a child might encounter. Do NOT include the original word "{word}".
+3. "etymology": A brief, kid-friendly explanation of the word's origin. Include the language(s) it came from and what the original word(s) meant. Keep it simple and interesting (2-3 sentences max). Example: "From Latin 'struere' meaning 'to build or pile up'" or "From Greek 'tele' (far) and 'phone' (sound)".
+4. "relatives": A list of 4-6 common English words built from the same base "{base}". Only include real, common words a child might encounter. Do NOT include the original word "{word}".
 
 Examples:
 Word "construction", base "struct":
-{{"definition": "The process of building something", "wordSum": "con + struct + ion", "relatives": ["structure", "destruction", "instruct", "restructure"]}}
+{{"definition": "The process of building something", "wordSum": "con + struct + ion", "etymology": "From Latin 'struere' meaning 'to build or pile up'. The prefix 'con-' means 'together'.", "relatives": ["structure", "destruction", "instruct", "restructure"]}}
 
 Word "unhappiness", base "happy":
-{{"definition": "The feeling of not being happy", "wordSum": "un + happy + ness", "relatives": ["happiness", "happily", "unhappy"]}}
+{{"definition": "The feeling of not being happy", "wordSum": "un + happy + ness", "etymology": "From Middle English 'happy' meaning 'lucky or fortunate'. The prefix 'un-' means 'not' and '-ness' makes it a noun.", "relatives": ["happiness", "happily", "unhappy"]}}
 
-Word "replay", base "play":
-{{"definition": "To play something again", "wordSum": "re + play", "relatives": ["player", "playful", "playing", "display"]}}
+Word "telephone", base "tele + phone":
+{{"definition": "A device for talking to someone far away", "wordSum": "tele + phone", "etymology": "From Greek 'tele' meaning 'far' and 'phone' meaning 'sound or voice'. Invented in the 1870s.", "relatives": ["telephonic", "telephones", "cellphone", "smartphone"]}}
 
 Now analyze: "{word}" with base "{base}"
 
@@ -297,6 +302,7 @@ Return ONLY valid JSON. No markdown, no explanation."""
         return {
             "definition": f"A word related to {base}",
             "wordSum": word,
+            "etymology": "Etymology unavailable",
             "relatives": []
         }
 
@@ -340,6 +346,7 @@ def get_word_matrix(word: str, context: dict = None) -> dict:
     return {
         "definition": word_analysis.get("definition", ""),
         "wordSum": word_analysis.get("wordSum", word),
+        "etymology": word_analysis.get("etymology", "Etymology unavailable"),
         "relatives": word_analysis.get("relatives", []),
         "matrix": matrix,
     }
