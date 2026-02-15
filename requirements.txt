@@ -2,3 +2,5 @@ pdfminer.six
 anthropic
 openai
 python-dotenv
+requests
+requests-oauthlib

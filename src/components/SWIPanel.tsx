@@ -131,6 +131,18 @@ export function SWIPanel({
               <section>
                 <h3 className="text-xs font-semibold uppercase text-gray-400 mb-1">Meaning</h3>
                 <p className="text-sm text-gray-700">{analysis.definition}</p>
+                {analysis.icon && (
+                  <div className="mt-3 flex flex-col items-center gap-1">
+                    <img
+                      src={analysis.icon}
+                      alt={`Icon representing ${analysis.word}`}
+                      className="w-16 h-16 object-contain opacity-80"
+                    />
+                    {analysis.visualConcept && (
+                      <p className="text-xs text-gray-500 italic">"{analysis.visualConcept}"</p>
+                    )}
+                  </div>
+                )}
               </section>
             )}
 

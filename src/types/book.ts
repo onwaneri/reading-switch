@@ -46,6 +46,8 @@ export interface SWIAnalysis {
   wordSum: string;
   relatives: string[];
   matrix: WordMatrix;
+  icon?: string;
+  visualConcept?: string;
 }
 
 // API Contracts
