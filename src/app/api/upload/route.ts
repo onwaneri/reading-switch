@@ -56,7 +56,7 @@ export async function POST(req: NextRequest) {
     const file = formData.get(`page-${i}`) as File;
     const filename = `page-${i + 1}.png`;
     const filePath = path.join(bookDir, filename);
-    const imageUrl = `/books/${bookId}/${filename}`;
+    const imageUrl = `/api/books/${bookId}/${filename}`;
 
     const buffer = Buffer.from(await file.arrayBuffer());
     await fs.writeFile(filePath, buffer);

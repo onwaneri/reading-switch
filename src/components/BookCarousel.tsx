@@ -55,7 +55,7 @@ export function BookCarousel({
             key={book.id}
             bookId={book.id}
             title={book.title}
-            thumbnail={`/books/${book.id}/page-1.png`}
+            thumbnail={`/api/books/${book.id}/page-1.png`}
             onClick={() => onBookClick(book.id)}
           />
         ))}

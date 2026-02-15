@@ -42,9 +42,18 @@ function ReaderContent() {
   // Load book data
   useEffect(() => {
     if (!bookId) return;
-    fetch(`/books/${bookId}/book.json`)
+    fetch(`/api/books/${bookId}/book.json`)
       .then(r => r.json())
-      .then(setBook)
+      .then((data: Book) => {
+        // Normalize image URLs: rewrite old /books/ paths to /api/books/
+        data.pages = data.pages.map(p => ({
+          ...p,
+          imageUrl: p.imageUrl.startsWith('/books/')
+            ? p.imageUrl.replace('/books/', '/api/books/')
+            : p.imageUrl,
+        }));
+        setBook(data);
+      })
       .catch(() => setBook(null));
   }, [bookId]);
 
