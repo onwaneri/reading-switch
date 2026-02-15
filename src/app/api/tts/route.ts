@@ -4,9 +4,7 @@ import { execFile } from 'child_process';
 import { promisify } from 'util';
 
 const execFileAsync = promisify(execFile);
-
-// Use virtual environment Python with all required dependencies
-const python = path.join(process.cwd(), 'venv', 'bin', 'python3');
+const python = process.platform === 'win32' ? 'python' : 'python3';
 
 interface TTSRequest {
   word: string;

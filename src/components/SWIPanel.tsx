@@ -1,6 +1,8 @@
 'use client';
 
+import { useEffect } from 'react';
 import type { DepthLevel, SWIAnalysis, WordPosition } from '@/types/book';
+import { useAudioCache } from '@/hooks/useAudioCache';
 
 interface SWIPanelProps {
   selectedWord: WordPosition | null;
@@ -46,6 +48,14 @@ export function SWIPanel({ selectedWord, analysis, isLoading, error, depth, onCl
   const isOpen = selectedWord !== null;
   const showMatrix = depth === 'standard' || depth === 'deep';
   const showRelatives = depth === 'deep';
+  const { isLoading: audioLoading, isReady: audioReady, loadWord, playAudio } = useAudioCache();
+
+  // Pre-load audio when a word is selected
+  useEffect(() => {
+    if (selectedWord?.text) {
+      loadWord(selectedWord.text);
+    }
+  }, [selectedWord?.text, loadWord]);
 
   return (
     <aside
@@ -58,9 +68,28 @@ export function SWIPanel({ selectedWord, analysis, isLoading, error, depth, onCl
     >
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b bg-yellow-50">
-        <h2 className="text-lg font-bold text-purple-800">
-          {selectedWord?.text ?? 'Tap a word'}
-        </h2>
+        <div className="flex items-center gap-2">
+          <h2 className="text-lg font-bold text-purple-800">
+            {selectedWord?.text ?? 'Tap a word'}
+          </h2>
+          {selectedWord && (
+            <button
+              onClick={playAudio}
+              disabled={!audioReady}
+              className="w-8 h-8 flex items-center justify-center rounded-full bg-purple-100 text-purple-700 hover:bg-purple-200 disabled:opacity-40 disabled:cursor-default cursor-pointer transition"
+              aria-label="Play pronunciation"
+              title={audioLoading ? 'Loading audio...' : audioReady ? 'Play pronunciation' : 'Audio unavailable'}
+            >
+              {audioLoading ? (
+                <span className="block w-4 h-4 border-2 border-purple-400 border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
+                  <path d="M11.553 3.064A.75.75 0 0112 3.75v16.5a.75.75 0 01-1.255.555L5.46 16H2.75A.75.75 0 012 15.25v-6.5A.75.75 0 012.75 8H5.46l5.285-4.805a.75.75 0 01.808-.131zM14.47 8.47a.75.75 0 011.06 0 5 5 0 010 7.071.75.75 0 11-1.06-1.06 3.5 3.5 0 000-4.95.75.75 0 010-1.061zm2.828-2.828a.75.75 0 011.06 0 9 9 0 010 12.728.75.75 0 11-1.06-1.06 7.5 7.5 0 000-10.607.75.75 0 010-1.06z" />
+                </svg>
+              )}
+            </button>
+          )}
+        </div>
         <button
           onClick={onClose}
           className="text-gray-500 hover:text-gray-800 text-2xl leading-none cursor-pointer"

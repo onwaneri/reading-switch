@@ -55,20 +55,23 @@ export function useAudioCache(): UseAudioCacheReturn {
       audioRef.current = null;
     }
 
+    // Helper: create an Audio element and wait until it's fully decoded
+    const prepareAudio = (url: string): Promise<HTMLAudioElement> =>
+      new Promise((resolve, reject) => {
+        const el = new Audio(url);
+        el.loop = false;
+        el.preload = 'auto';
+        el.addEventListener('canplaythrough', () => resolve(el), { once: true });
+        el.addEventListener('error', () => reject(new Error('Audio decode failed')), { once: true });
+        el.load();
+      });
+
     // Check cache first
     const cached = cacheRef.current.get(normalizedWord);
     if (cached) {
       console.log(`Cache HIT: ${normalizedWord}`);
 
-      // Create audio element
-      audioRef.current = new Audio(cached.audioUrl);
-      audioRef.current.loop = false; // Explicitly disable looping
-
-      // Add ended event listener to ensure clean state
-      audioRef.current.addEventListener('ended', () => {
-        console.log(`Audio finished playing: ${normalizedWord}`);
-      });
-
+      audioRef.current = await prepareAudio(cached.audioUrl);
       setIsReady(true);
       return;
     }
@@ -110,15 +113,7 @@ export function useAudioCache(): UseAudioCacheReturn {
       });
       setCacheSize(cacheRef.current.size); // Update cache size state
 
-      // Create audio element
-      audioRef.current = new Audio(audioUrl);
-      audioRef.current.loop = false; // Explicitly disable looping
-
-      // Add ended event listener to ensure clean state
-      audioRef.current.addEventListener('ended', () => {
-        console.log(`Audio finished playing: ${normalizedWord}`);
-      });
-
+      audioRef.current = await prepareAudio(audioUrl);
       setIsReady(true);
       console.log(`Cached: ${normalizedWord}, cache size: ${cacheRef.current.size}`);
     } catch (err) {
@@ -133,28 +128,18 @@ export function useAudioCache(): UseAudioCacheReturn {
   /**
    * Play the currently loaded audio
    */
-  const playAudio = useCallback(() => {
-    if (!audioRef.current) {
-      setError('No audio loaded');
-      return;
-    }
-
-    if (!isReady) {
-      setError('Audio not ready');
-      return;
-    }
+  const playAudio = useCallback(async () => {
+    if (!audioRef.current || !isReady) return;
 
     try {
-      // Reset to beginning if already played
       audioRef.current.currentTime = 0;
-      audioRef.current.play();
-      console.log(`Playing: ${selectedWord}`);
+      await audioRef.current.play();
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'Playback error';
       setError(errorMsg);
       console.error('Error playing audio:', err);
     }
-  }, [isReady, selectedWord]);
+  }, [isReady]);
 
   /**
    * Clear all cached audio
