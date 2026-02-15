@@ -143,7 +143,6 @@ export function SWIPanel({
   const isOpen = selectedWord !== null;
   const [activeTab, setActiveTab] = useState<TabId | null>(null);
   const showMatrix = depth === 'standard' || depth === 'deep';
-  const showRelatives = depth === 'deep';
   const { isLoading: audioLoading, isReady: audioReady, loadWord, playAudio } =
     useAudioCache();
 
@@ -242,18 +241,26 @@ export function SWIPanel({
         <div className="flex flex-col items-center w-full px-[31px] gap-2.5 flex-1 min-h-0">
           {/* Word heading — Figma: flex row justify-between align-center, padding 4px 25px */}
           <div className="flex-shrink-0 w-full flex flex-row justify-between items-center py-1 px-[25px] min-h-[60px]">
-            <div className="flex items-center justify-center min-w-0">
-              {analysis && !isLoading ? (
-                <WordBreakdownDisplay
-                  wordSum={analysis.wordSum}
-                  bases={analysis.matrix.bases.map((b) => b.text)}
-                  size="large"
-                />
-              ) : selectedWord ? (
-                <p className="font-bold text-[#061B2E] min-w-0 max-w-full break-words" style={{ fontSize: '3em', lineHeight: '1.2' }}>
-                  {selectedWord.text}
-                </p>
-              ) : null}
+            <div className="flex items-center gap-5 min-w-0">
+              <div className="flex items-center justify-center min-w-0">
+                {analysis && !isLoading ? (
+                  <WordBreakdownDisplay
+                    wordSum={analysis.wordSum}
+                    bases={analysis.matrix.bases.map((b) => b.text)}
+                    size="large"
+                  />
+                ) : selectedWord ? (
+                  <p className="font-bold text-[#061B2E] min-w-0 max-w-full break-words" style={{ fontSize: '3em', lineHeight: '1.2' }}>
+                    {selectedWord.text}
+                  </p>
+                ) : null}
+              </div>
+              {/* Loading spinner for analysis */}
+              {isLoading && (
+                <div className="flex-shrink-0 w-[40px] h-[40px] flex items-center justify-center">
+                  <span className="block w-5 h-5 border-3 border-[#061B2E] border-t-transparent rounded-full animate-spin" style={{ borderWidth: '3px' }} />
+                </div>
+              )}
             </div>
             {/* Volume 2 - TTS button */}
             {selectedWord && (
@@ -413,28 +420,31 @@ export function SWIPanel({
 
 
               {activeTab === 'etymology' && (
-                <section className="text-white min-w-0">
-                  <h3 className="font-semibold uppercase text-white/80 mb-2" style={{ fontSize: '0.75em' }}>
-                    Word Family
-                  </h3>
-                  {showRelatives && analysis.relatives.length > 0 ? (
-                    <div className="flex flex-wrap gap-1.5">
-                      {analysis.relatives.map((r, i) => (
-                        <span
-                          key={i}
-                          className="px-2.5 py-1 bg-white/25 text-white rounded-full break-all"
-                          style={{ fontSize: '1.5em' }}
-                        >
-                          {r}
-                        </span>
-                      ))}
+                <section className="text-white min-w-0 space-y-4">
+                  {/* Etymology Text */}
+                  {analysis.etymology ? (
+                    <div>
+                      <p className="text-white break-words" style={{ fontSize: '1.5em', lineHeight: '1.2' }}>
+                        {analysis.etymology}
+                      </p>
                     </div>
-                  ) : (
-                    <p className="text-white/90 break-words" style={{ fontSize: '1.5em' }}>
-                      Word family and etymology are shown at deeper analysis
-                      levels. Try &quot;Standard&quot; or &quot;Deep&quot; depth
-                      for more.
-                    </p>
+                  ) : null}
+
+                  {/* Word Family */}
+                  {analysis.relatives && analysis.relatives.length > 0 && (
+                    <div>
+                      <div className="flex flex-wrap gap-1.5">
+                        {analysis.relatives.map((r, i) => (
+                          <span
+                            key={i}
+                            className="px-2.5 py-1 bg-white/25 text-white rounded-full break-all"
+                            style={{ fontSize: '1.5em' }}
+                          >
+                            {r}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
                   )}
                 </section>
               )}

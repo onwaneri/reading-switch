@@ -30,14 +30,7 @@ function ReaderContent() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [inLibrary, setInLibrary] = useState(false);
   const [checkingLibrary, setCheckingLibrary] = useState(true);
-  const {
-    messages: chatMessages,
-    isStreaming: isChatStreaming,
-    error: chatError,
-    sendMessage: sendChatMessage,
-    reset: resetChat,
-  } = useSocraticChat();
-  const [isChatExpanded, setIsChatExpanded] = useState(false);
+  const { reset: resetChat } = useSocraticChat();
   const isPanelOpen = selectedWord !== null;
   const showTwoPages = !isPanelOpen;
   const nextPage = book?.pages[currentPage + 1];
@@ -192,7 +185,6 @@ function ReaderContent() {
     setAnalysisError(null);
     setIsAnalyzing(true);
     resetChat();
-    setIsChatExpanded(false);
     const textToUse = pageTextOverride ?? pageText;
 
     try {
@@ -245,7 +237,6 @@ function ReaderContent() {
     setAnalysis(null);
     setAnalysisError(null);
     resetChat();
-    setIsChatExpanded(false);
   };
 
   // Scale the 2-page spread as a unit to fit viewport (keeps pages touching)
@@ -451,14 +442,6 @@ function ReaderContent() {
         error={analysisError}
         depth={depth}
         onClose={handleClosePanel}
-        bookTitle={book?.title ?? ''}
-        pageText={pageText}
-        chatMessages={chatMessages}
-        isChatStreaming={isChatStreaming}
-        chatError={chatError}
-        onChatSend={sendChatMessage}
-        isChatExpanded={isChatExpanded}
-        onToggleChatExpanded={() => setIsChatExpanded(prev => !prev)}
       />
 
       {/* Page Search Modal */}
