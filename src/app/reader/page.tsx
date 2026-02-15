@@ -5,7 +5,6 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import type { Book, BookPage as BookPageType, WordPosition, SWIAnalysis, DepthLevel } from '@/types/book';
 import { BookPage } from '@/components/BookPage';
 import { SWIPanel } from '@/components/SWIPanel';
-import { DepthSelector } from '@/components/DepthSelector';
 import { PageSearch } from '@/components/PageSearch';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSocraticChat } from '@/hooks/useSocraticChat';
@@ -24,7 +23,7 @@ function ReaderContent() {
   const [analysis, setAnalysis] = useState<SWIAnalysis | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisError, setAnalysisError] = useState<string | null>(null);
-  const [depth, setDepth] = useState<DepthLevel>('standard');
+  const depth: DepthLevel = 'standard';
   const spreadRef = useRef<HTMLDivElement>(null);
   const [spreadScale, setSpreadScale] = useState(1);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -359,7 +358,6 @@ function ReaderContent() {
           <span className="text-sm text-gray-500 font-medium">
             {book.title}
           </span>
-          <DepthSelector depth={depth} onChange={setDepth} />
         </div>
 
         <div className="flex items-center gap-2">
