@@ -424,6 +424,9 @@ export function SWIPanel({
                   {/* Etymology Text */}
                   {analysis.etymology ? (
                     <div>
+                      <h3 className="font-semibold uppercase text-white/80 mb-2" style={{ fontSize: '0.75em' }}>
+                        Etymology
+                      </h3>
                       <p className="text-white break-words" style={{ fontSize: '1.5em', lineHeight: '1.2' }}>
                         {analysis.etymology}
                       </p>
@@ -433,6 +436,9 @@ export function SWIPanel({
                   {/* Word Family */}
                   {analysis.relatives && analysis.relatives.length > 0 && (
                     <div>
+                      <h3 className="font-semibold uppercase text-white/80 mb-2" style={{ fontSize: '0.75em' }}>
+                        Word Family
+                      </h3>
                       <div className="flex flex-wrap gap-1.5">
                         {analysis.relatives.map((r, i) => (
                           <span
