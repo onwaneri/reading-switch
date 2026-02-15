@@ -1,0 +1,12 @@
+[
+  {
+    "id": "cd632040-7bb6-47b7-94e0-8c25a35491b7",
+    "username": "admin",
+    "passwordHash": "$2b$10$H3luzakfy7VzcqB6uHA5WO5KJP8KRp7byn8ua4jiHiuMerr/WFb/G",
+    "createdAt": "2026-02-14T22:12:36.545Z",
+    "library": [
+      "1685a8d4-3d80-4598-a0a3-5b364d3b7ec0",
+      "ac2efa64-3f5d-4c5e-a211-f1bc8cc592e0"
+    ]
+  }
+]

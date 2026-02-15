@@ -6,10 +6,13 @@ import type { Book, BookPage as BookPageType, WordPosition, SWIAnalysis, DepthLe
 import { BookPage } from '@/components/BookPage';
 import { SWIPanel } from '@/components/SWIPanel';
 import { DepthSelector } from '@/components/DepthSelector';
+import { PageSearch } from '@/components/PageSearch';
+import { useAuth } from '@/contexts/AuthContext';
 
 function ReaderContent() {
   const searchParams = useSearchParams();
   const bookId = searchParams.get('bookId');
+  const { user } = useAuth();
 
   const [book, setBook] = useState<Book | null>(null);
   const [currentPage, setCurrentPage] = useState(0);
@@ -20,6 +23,9 @@ function ReaderContent() {
   const [depth, setDepth] = useState<DepthLevel>('standard');
   const spreadRef = useRef<HTMLDivElement>(null);
   const [spreadScale, setSpreadScale] = useState(1);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [inLibrary, setInLibrary] = useState(false);
+  const [checkingLibrary, setCheckingLibrary] = useState(true);
   const isPanelOpen = selectedWord !== null;
   const showTwoPages = !isPanelOpen;
   const nextPage = book?.pages[currentPage + 1];
@@ -32,6 +38,48 @@ function ReaderContent() {
       .then(setBook)
       .catch(() => setBook(null));
   }, [bookId]);
+
+  // Check if book is in user's library
+  useEffect(() => {
+    if (!bookId || !user) {
+      setCheckingLibrary(false);
+      return;
+    }
+
+    setCheckingLibrary(true);
+    fetch('/api/library')
+      .then(r => r.json())
+      .then(data => {
+        const isInLib = data.books?.some((b: Book) => b.id === bookId) || false;
+        setInLibrary(isInLib);
+      })
+      .catch(() => setInLibrary(false))
+      .finally(() => setCheckingLibrary(false));
+  }, [bookId, user]);
+
+  const handleToggleLibrary = async () => {
+    if (!bookId || !user) return;
+
+    try {
+      if (inLibrary) {
+        await fetch('/api/library', {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ bookId }),
+        });
+        setInLibrary(false);
+      } else {
+        await fetch('/api/library', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ bookId }),
+        });
+        setInLibrary(true);
+      }
+    } catch (error) {
+      console.error('Failed to toggle library:', error);
+    }
+  };
 
   // Arrow key navigation — step by 2 when panel closed (2-page spread), 1 when open
   const step = selectedWord !== null ? 1 : 2;
@@ -158,13 +206,22 @@ function ReaderContent() {
     <div className="h-screen bg-amber-50 flex flex-col overflow-hidden">
       {/* Toolbar */}
       <header className="flex-shrink-0 flex items-center justify-between px-6 py-3 bg-white border-b shadow-sm">
-        <button
-          onClick={() => setCurrentPage(p => Math.max(p - step, 0))}
-          disabled={currentPage === 0}
-          className="px-4 py-2 rounded-lg bg-purple-100 text-purple-700 disabled:opacity-30 cursor-pointer disabled:cursor-default"
-        >
-          Prev
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setCurrentPage(p => Math.max(p - step, 0))}
+            disabled={currentPage === 0}
+            className="px-4 py-2 rounded-lg bg-purple-100 text-purple-700 disabled:opacity-30 cursor-pointer disabled:cursor-default"
+          >
+            Prev
+          </button>
+          <button
+            onClick={() => setIsSearchOpen(true)}
+            className="px-4 py-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition"
+            title="Search pages"
+          >
+            🔍
+          </button>
+        </div>
 
         <div className="flex flex-col items-center gap-1">
           <span className="text-sm text-gray-500 font-medium">
@@ -173,13 +230,28 @@ function ReaderContent() {
           <DepthSelector depth={depth} onChange={setDepth} />
         </div>
 
-        <button
-          onClick={() => setCurrentPage(p => Math.min(p + step, book.pages.length - 1))}
-          disabled={currentPage === book.pages.length - 1}
-          className="px-4 py-2 rounded-lg bg-purple-100 text-purple-700 disabled:opacity-30 cursor-pointer disabled:cursor-default"
-        >
-          Next
-        </button>
+        <div className="flex items-center gap-2">
+          {user && (
+            <button
+              onClick={handleToggleLibrary}
+              disabled={checkingLibrary}
+              className={`px-4 py-2 rounded-lg transition ${
+                inLibrary
+                  ? 'bg-red-100 text-red-700 hover:bg-red-200'
+                  : 'bg-green-100 text-green-700 hover:bg-green-200'
+              } disabled:opacity-50 disabled:cursor-not-allowed`}
+            >
+              {checkingLibrary ? '...' : inLibrary ? 'Remove from Library' : 'Add to Library'}
+            </button>
+          )}
+          <button
+            onClick={() => setCurrentPage(p => Math.min(p + step, book.pages.length - 1))}
+            disabled={currentPage === book.pages.length - 1}
+            className="px-4 py-2 rounded-lg bg-purple-100 text-purple-700 disabled:opacity-30 cursor-pointer disabled:cursor-default"
+          >
+            Next
+          </button>
+        </div>
       </header>
 
       {/* Main content area — explicit viewport height so pages fit without scroll */}
@@ -234,6 +306,14 @@ function ReaderContent() {
         error={analysisError}
         depth={depth}
         onClose={handleClosePanel}
+      />
+
+      {/* Page Search Modal */}
+      <PageSearch
+        pages={book.pages}
+        onPageSelect={setCurrentPage}
+        isOpen={isSearchOpen}
+        onClose={() => setIsSearchOpen(false)}
       />
     </div>
   );
