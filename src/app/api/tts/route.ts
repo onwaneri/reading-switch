@@ -1,10 +1,30 @@
 import { NextRequest } from 'next/server';
 import path from 'path';
+import fs from 'fs';
 import { execFile } from 'child_process';
 import { promisify } from 'util';
 
 const execFileAsync = promisify(execFile);
 const python = process.platform === 'win32' ? 'python' : 'python3';
+
+function getEnvForTTS(): NodeJS.ProcessEnv {
+  const env = { ...process.env };
+  const envPath = path.join(process.cwd(), '.local.env');
+  try {
+    if (fs.existsSync(envPath)) {
+      const content = fs.readFileSync(envPath, 'utf8');
+      for (const line of content.split('\n')) {
+        const m = line.match(/^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)$/);
+        if (m) {
+          const key = m[1];
+          const value = m[2].replace(/^["']|["']$/g, '').trim();
+          if (key === 'OPENAI_API_KEY' || key == 'ANTHROPIC_API_KEY') env[key] = value;
+        }
+      }
+    }
+  } catch {  }
+  return env;
+}
 
 interface TTSRequest {
   word: string;

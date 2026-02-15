@@ -11,9 +11,14 @@ from typing import Dict
 from anthropic import Anthropic
 from openai import OpenAI
 import base64
+import requests
+from requests_oauthlib import OAuth1
 
 from dotenv import load_dotenv
-load_dotenv(".local.env")
+# Load .env.local from the script's directory
+env_path = os.path.join(os.path.dirname(__file__), ".env.local")
+load_dotenv(env_path)
+print(f"Loading env from: {env_path}", file=sys.stderr)
 
 
 
@@ -126,6 +131,51 @@ Return ONLY the base morpheme(s) with no explanation, no hyphens in the bases th
     except Exception as e:
         print(f"Error extracting base for '{word}': {e}", file=sys.stderr)
         raise
+
+
+def generate_matrix_with_icons(base: str) -> dict:
+    """
+    Generate a complete word matrix with icons for each morpheme.
+
+    Args:
+        base: The base morpheme(s) - can be single or multiple separated by ' + '
+
+    Returns:
+        Dictionary containing the word matrix with icon URLs
+    """
+    # First generate the matrix
+    matrix = generate_matrix(base)
+
+    # Fetch icons for bases
+    for base_morph in matrix.get("bases", []):
+        try:
+            icon_url = fetch_noun_project_icon(base_morph["text"], base_morph["text"])
+            if icon_url:
+                base_morph["iconUrl"] = icon_url
+        except Exception as e:
+            print(f"Failed to fetch icon for base '{base_morph['text']}': {e}", file=sys.stderr)
+
+    # Fetch icons for prefixes (use meaning for better results)
+    for prefix in matrix.get("prefixes", []):
+        try:
+            search_term = prefix.get("meaning", prefix["text"])
+            icon_url = fetch_noun_project_icon(search_term, prefix["text"])
+            if icon_url:
+                prefix["iconUrl"] = icon_url
+        except Exception as e:
+            print(f"Failed to fetch icon for prefix '{prefix['text']}': {e}", file=sys.stderr)
+
+    # Fetch icons for suffixes (use meaning for better results)
+    for suffix in matrix.get("suffixes", []):
+        try:
+            search_term = suffix.get("meaning", suffix["text"])
+            icon_url = fetch_noun_project_icon(search_term, suffix["text"])
+            if icon_url:
+                suffix["iconUrl"] = icon_url
+        except Exception as e:
+            print(f"Failed to fetch icon for suffix '{suffix['text']}': {e}", file=sys.stderr)
+
+    return matrix
 
 
 def generate_matrix(base: str) -> dict:
@@ -313,6 +363,147 @@ Return ONLY valid JSON. No markdown, no explanation."""
         }
 
 
+def generate_visual_concept(word: str) -> str:
+    """
+    Generate a simple, concrete visual concept for icon search.
+
+    Args:
+        word: The word to visualize
+
+    Returns:
+        Simple noun phrase (e.g., "hardhat", "book")
+    """
+    prompt = f"""You are an expert at converting words into simple, concrete visual representations.
+
+Your task: Generate 1-3 simple nouns that represent "{word}" visually.
+
+CRITICAL RULES:
+1. Return ONLY concrete, physical objects - no abstract concepts
+2. Prefer everyday objects that children would recognize
+3. Use simple, common English words (1-2 words maximum)
+4. Return plain text only - no JSON, no markdown, no explanation
+5. If multiple concepts, separate with comma
+6. Think about what icon would help a child understand this word
+
+Examples:
+- "construction" → "hardhat"
+- "education" → "book"
+- "telephone" → "phone"
+- "transportation" → "car"
+- "happiness" → "smile"
+- "writing" → "pencil"
+
+Word to visualize: {word}
+
+Return ONLY the simple noun(s), nothing else."""
+
+    try:
+        # Use existing Claude client with lower temperature for consistency
+        message = client.messages.create(
+            model="claude-sonnet-4-5-20250929",
+            max_tokens=50,
+            temperature=0.1,  # Lower than usual 0.3 for consistency
+            messages=[{"role": "user", "content": prompt}]
+        )
+        concept = message.content[0].text.strip()
+
+        # Take only first concept if multiple returned
+        concept = concept.split(',')[0].strip()
+
+        print(f"Generated visual concept for '{word}': '{concept}'", file=sys.stderr)
+        return concept
+    except Exception as e:
+        print(f"Error generating visual concept for '{word}': {e}", file=sys.stderr)
+        return word  # Fallback: use word itself
+
+
+def fetch_noun_project_icon(concept: str, word: str) -> str:
+    """
+    Fetch an icon from The Noun Project API.
+
+    Args:
+        concept: Visual concept to search for (e.g., "hardhat")
+        word: Original word (used for caching filename)
+
+    Returns:
+        Path to downloaded icon file, or None if unavailable
+    """
+    # Step 1: Check cache first
+    icon_dir = os.path.join(os.path.dirname(__file__), "public", "icons")
+    icon_path = os.path.join(icon_dir, f"{word}.png")
+    web_path = f"/icons/{word}.png"
+
+    if os.path.exists(icon_path):
+        print(f"Cache hit! Using cached icon for '{word}'", file=sys.stderr)
+        return web_path
+
+    # Step 2: Ensure icons directory exists
+    try:
+        os.makedirs(icon_dir, exist_ok=True)
+    except Exception as e:
+        print(f"Error creating icons directory: {e}", file=sys.stderr)
+        return None
+
+    # Step 3: Get API credentials
+    api_key = os.environ.get("NOUN_PROJECT_KEY")
+    api_secret = os.environ.get("NOUN_PROJECT_SECRET")
+
+    if not api_key or not api_secret:
+        print("Warning: NOUN_PROJECT_KEY or NOUN_PROJECT_SECRET not set", file=sys.stderr)
+        return None
+
+    # Step 4: Set up OAuth1 authentication
+    auth = OAuth1(api_key, api_secret)
+
+    # Step 5: Search for icon
+    try:
+        print(f"Searching Noun Project for: '{concept}'", file=sys.stderr)
+
+        search_url = "https://api.thenounproject.com/v2/icon"
+        params = {
+            "query": concept,
+            "limit": 1,
+            "thumbnail_size": 200
+        }
+
+        response = requests.get(search_url, auth=auth, params=params, timeout=10)
+        response.raise_for_status()
+
+        data = response.json()
+        icons = data.get("icons", [])
+
+        if not icons:
+            print(f"No icons found for concept '{concept}'", file=sys.stderr)
+            return None
+
+        # Step 6: Get thumbnail URL
+        icon_data = icons[0]
+        thumbnail_url = icon_data.get("thumbnail_url")
+
+        if not thumbnail_url:
+            print(f"No thumbnail URL in icon data", file=sys.stderr)
+            return None
+
+        print(f"Found icon: {icon_data.get('term', 'unknown')} (ID: {icon_data.get('id', 'N/A')})", file=sys.stderr)
+
+        # Step 7: Download icon
+        print(f"Downloading icon from: {thumbnail_url}", file=sys.stderr)
+        icon_response = requests.get(thumbnail_url, timeout=10)
+        icon_response.raise_for_status()
+
+        # Step 8: Save to file
+        with open(icon_path, 'wb') as f:
+            f.write(icon_response.content)
+
+        print(f"Icon saved to: {icon_path}", file=sys.stderr)
+        return web_path
+
+    except requests.exceptions.RequestException as e:
+        print(f"API request failed for concept '{concept}': {e}", file=sys.stderr)
+        return None
+    except Exception as e:
+        print(f"Error fetching icon for '{concept}': {e}", file=sys.stderr)
+        return None
 
 
 def get_word_matrix(word: str, context: dict = None) -> dict:
@@ -323,14 +514,16 @@ def get_word_matrix(word: str, context: dict = None) -> dict:
     1. Extracts the base morpheme from the word
     2. Checks the cache for an existing matrix
     3. Generates a new matrix if needed
-    4. Returns the matrix JSON
+    4. Analyzes the word (definition, word sum, etymology, relatives)
+    5. Generates visual concept and fetches icon
+    6. Returns the complete analysis with optional icon
 
     Args:
         word: The input word to analyze
         context: Optional dict with bookTitle and pageText for better definitions
 
     Returns:
-        Dictionary containing the complete word matrix
+        Dictionary containing the complete word matrix and optional icon path
     """
     print(f"Processing word: {word}", file=sys.stderr)
     if context:
@@ -345,11 +538,19 @@ def get_word_matrix(word: str, context: dict = None) -> dict:
         matrix = matrix_cache[base]
     else:
         print(f"Cache miss. Generating new matrix for '{base}'", file=sys.stderr)
-        matrix = generate_matrix(base)
+        matrix = generate_matrix_with_icons(base)
         matrix_cache[base] = matrix
 
     # Step 3: Get word-specific analysis (definition, word sum, relatives)
     word_analysis = analyze_word_in_context(word, base, context)
+
+    # Step 4: Fetch icon using the word directly
+    icon_path = None
+    try:
+        icon_path = fetch_noun_project_icon(word, word)
+    except Exception as e:
+        print(f"Icon generation failed (non-critical): {e}", file=sys.stderr)
+        # Continue without icon
 
     return {
         "definition": word_analysis.get("definition", ""),
@@ -357,6 +558,8 @@ def get_word_matrix(word: str, context: dict = None) -> dict:
         "etymology": word_analysis.get("etymology", "Etymology unavailable"),
         "relatives": word_analysis.get("relatives", []),
         "matrix": matrix,
+        "icon": icon_path,
+        "visualConcept": word if icon_path else None,
     }
 
 

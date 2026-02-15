@@ -8,13 +8,14 @@ export interface WordPosition {
 
 export interface BookPage {
   pageNumber: number;
-  imageUrl: string;
+  imageUrl?: string;  // Optional - for legacy books with pre-rendered images
   words: WordPosition[];
 }
 
 export interface Book {
   id: string;
   title: string;
+  pdfUrl?: string;    // URL to the PDF file for on-demand rendering
   pages: BookPage[];
 }
 
@@ -31,6 +32,7 @@ export interface Morpheme {
 export interface MatrixMorpheme {
   text: string;
   meaning: string;
+  iconUrl?: string;
 }
 
 export interface WordMatrix {
@@ -44,8 +46,11 @@ export interface SWIAnalysis {
   depth: DepthLevel;
   definition: string;
   wordSum: string;
+  etymology: string;
   relatives: string[];
   matrix: WordMatrix;
+  icon?: string;
+  visualConcept?: string;
 }
 
 // API Contracts

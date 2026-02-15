@@ -4,11 +4,10 @@ import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { BookCarousel } from '@/components/BookCarousel';
-import { SearchBar } from '@/components/SearchBar';
 import { Book } from '@/types/book';
 
 export default function LibraryPage() {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, logout } = useAuth();
   const router = useRouter();
   const [myLibrary, setMyLibrary] = useState<Book[]>([]);
   const [recommended, setRecommended] = useState<Book[]>([]);
@@ -21,13 +20,18 @@ export default function LibraryPage() {
     }
   }, [user, authLoading, router]);
 
+  const handleLogout = async () => {
+    await logout();
+    router.push('/');
+  };
+
   const loadLibraries = useCallback(async () => {
     try {
       setLoading(true);
 
       const [libraryRes, recommendedRes] = await Promise.all([
-        fetch('/api/library'),
-        fetch('/api/recommended'),
+        fetch('/api/library', { credentials: 'include' }),
+        fetch('/api/recommended', { credentials: 'include' }),
       ]);
 
       if (libraryRes.ok) {
@@ -52,34 +56,24 @@ export default function LibraryPage() {
     }
   }, [user, loadLibraries]);
 
+  // Reload libraries when user returns to the page
+  useEffect(() => {
+    const handleFocus = () => {
+      if (user) {
+        loadLibraries();
+      }
+    };
+
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
+  }, [user, loadLibraries]);
+
   const handleBookClick = (bookId: string) => {
     router.push(`/reader?bookId=${bookId}`);
   };
 
   const handleAddClick = () => {
     router.push('/upload');
-  };
-
-  const handleAddFromSearch = async (identifier: string, title: string) => {
-    try {
-      const response = await fetch('/api/download', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ identifier }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to download book');
-      }
-
-      const data = await response.json();
-
-      await loadLibraries();
-
-      router.push(`/reader?bookId=${data.bookId}`);
-    } catch (err) {
-      throw err;
-    }
   };
 
   if (authLoading) {
@@ -96,15 +90,15 @@ export default function LibraryPage() {
 
   return (
     <div className="min-h-screen bg-amber-50">
-      <header className="bg-gray-200 py-4 border-b border-gray-300">
+      <header className="bg-white py-4 border-b border-gray-300 shadow-sm">
         <div className="max-w-7xl mx-auto px-6">
           <div className="flex justify-between items-center">
-            <h1 className="text-2xl font-bold text-gray-800">SWItch</h1>
+            <h1 className="text-2xl font-bold text-purple-800">SWItch</h1>
             <button
-              onClick={() => router.push('/dashboard')}
+              onClick={handleLogout}
               className="px-4 py-2 bg-purple-700 text-white rounded-lg hover:bg-purple-800 transition text-sm"
             >
-              Back to Dashboard
+              Logout
             </button>
           </div>
         </div>
@@ -142,18 +136,24 @@ export default function LibraryPage() {
             />
           ) : (
             <div className="text-center text-gray-600 py-8 bg-white rounded-lg">
-              <p>No recommended books available yet.</p>
-              <p className="text-sm mt-2">
-                Add PDFs to the <code className="bg-gray-100 px-2 py-1 rounded">data/recommended/</code> folder
-                and run the processing script.
+              <p className="font-semibold mb-3 text-gray-800">Add Public Domain Books</p>
+              <p className="text-sm mb-4">
+                Download free PDFs from <a href="https://www.gutenberg.org" target="_blank" rel="noopener noreferrer" className="text-purple-700 hover:underline font-medium">Project Gutenberg</a> or other public domain sources.
               </p>
+              <div className="text-left max-w-xl mx-auto space-y-2 text-sm bg-amber-50 p-4 rounded-lg">
+                <p className="font-medium text-gray-800">To add recommended books:</p>
+                <ol className="list-decimal list-inside space-y-1.5 ml-2">
+                  <li>Download PDF files to <code className="bg-white px-2 py-1 rounded border">data/recommended/</code></li>
+                  <li>Refresh this page - books will auto-process! ✨</li>
+                </ol>
+                <p className="text-xs text-gray-500 mt-3 italic">
+                  Books are automatically processed when you visit the library page
+                </p>
+              </div>
             </div>
           )}
         </section>
 
-        <section>
-          <SearchBar onAddBook={handleAddFromSearch} />
-        </section>
       </main>
     </div>
   );

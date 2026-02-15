@@ -21,8 +21,8 @@ export async function POST(req: NextRequest) {
   const bookDir = path.join(process.cwd(), "public", "books", bookId);
   await fs.mkdir(bookDir, { recursive: true });
 
-  // Save PDF temporarily for Python processing
-  const pdfPath = path.join(bookDir, "source.pdf");
+  // Save PDF file permanently
+  const pdfPath = path.join(bookDir, "book.pdf");
   const pdfBuffer = Buffer.from(await pdfFile.arrayBuffer());
   await fs.writeFile(pdfPath, pdfBuffer);
 
@@ -46,7 +46,15 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // Clean up temp PDF
+// Build book data - pages are rendered on-demand from the PDF
+  const bookData = {
+    id: bookId,
+    title,
+    pdfUrl: `/books/${bookId}/book.pdf`,
+    pages: pagesData,
+  };
+  
+/*  // Clean up temp PDF
   await fs.unlink(pdfPath).catch(() => {});
 
   // Save page images and build book data
@@ -56,7 +64,7 @@ export async function POST(req: NextRequest) {
     const file = formData.get(`page-${i}`) as File;
     const filename = `page-${i + 1}.png`;
     const filePath = path.join(bookDir, filename);
-    const imageUrl = `/api/books/${bookId}/${filename}`;
+    const imageUrl = `/books/${bookId}/${filename}`;
 
     const buffer = Buffer.from(await file.arrayBuffer());
     await fs.writeFile(filePath, buffer);
@@ -68,7 +76,7 @@ export async function POST(req: NextRequest) {
     });
   }
 
-  const bookData = { id: bookId, title, pages };
+  const bookData = { id: bookId, title, pages }; */
   await fs.writeFile(
     path.join(bookDir, "book.json"),
     JSON.stringify(bookData)

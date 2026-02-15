@@ -1,24 +1,30 @@
 'use client';
 
+import { PDFThumbnail } from './PDFThumbnail';
+
 interface BookCardProps {
   bookId: string;
   title: string;
-  thumbnail: string;
+  thumbnail?: string;
+  pdfUrl?: string;
   onClick: () => void;
 }
 
-export function BookCard({ title, thumbnail, onClick }: BookCardProps) {
+export function BookCard({ bookId, title, thumbnail, pdfUrl, onClick }: BookCardProps) {
   return (
     <div
       onClick={onClick}
-      className="flex-shrink-0 w-48 bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition cursor-pointer"
+      className="flex-shrink-0 w-48 bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition cursor-pointer overflow-hidden"
     >
-      <div className="aspect-[3/4] bg-gray-100 rounded-t-lg overflow-hidden">
-        <img
-          src={thumbnail}
-          alt={title}
-          className="w-full h-full object-cover"
-        />
+      <div className="aspect-[3/4] bg-gradient-to-br from-purple-100 to-amber-100 flex items-center justify-center relative overflow-hidden">
+        {pdfUrl ? (
+          <PDFThumbnail
+            pdfUrl={pdfUrl}
+            className="absolute inset-0 w-full h-full object-cover"
+          />
+        ) : (
+          <div className="text-6xl">📖</div>
+        )}
       </div>
       <div className="p-3">
         <h3 className="text-sm font-medium text-gray-800 line-clamp-2" title={title}>

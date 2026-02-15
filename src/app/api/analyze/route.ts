@@ -11,8 +11,11 @@ const python = process.platform === 'win32' ? 'python' : 'python3';
 interface PythonOutput {
   definition: string;
   wordSum: string;
+  etymology: string;
   relatives: string[];
   matrix: { bases: { text: string; meaning: string }[]; prefixes: { text: string; meaning: string }[]; suffixes: { text: string; meaning: string }[] };
+  icon?: string;
+  visualConcept?: string;
 }
 
 async function analyzeWord(word: string, context?: { bookTitle?: string; pageText?: string }): Promise<PythonOutput> {
@@ -55,8 +58,11 @@ export async function POST(req: NextRequest) {
       depth,
       definition: result.definition,
       wordSum: result.wordSum,
+      etymology: result.etymology,
       relatives: result.relatives,
       matrix: result.matrix,
+      icon: result.icon,
+      visualConcept: result.visualConcept,
     };
     setCachedAnalysis(word, depth, analysis);
     return Response.json({ analysis } satisfies AnalyzeResponse);

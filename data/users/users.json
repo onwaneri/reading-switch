@@ -5,9 +5,12 @@
     "passwordHash": "$2b$10$H3luzakfy7VzcqB6uHA5WO5KJP8KRp7byn8ua4jiHiuMerr/WFb/G",
     "createdAt": "2026-02-14T22:12:36.545Z",
     "library": [
-      "1685a8d4-3d80-4598-a0a3-5b364d3b7ec0",
       "ac2efa64-3f5d-4c5e-a211-f1bc8cc592e0",
-      "c6c1ebcd-1244-4372-8328-bafe118f53e7"
+      "c6c1ebcd-1244-4372-8328-bafe118f53e7",
+      "97dbb76d-19e3-4470-818d-ae308ae4fa2c",
+      "47a258ac-4cd4-4b29-b041-c4c03668c1a7",
+      "9ca1f954-4f39-4999-b80c-108f5f95b9ac",
+      "59e63fb7-aa93-4271-bab7-fab2982b65c9"
     ]
   }
 ]
