@@ -110,6 +110,21 @@ def _emit_word(chars, x0, y0, x1, y1, page_w, page_h, out):
     })
 
 
+def extract_words_from_pdf(pdf_path, title):
+    """
+    Extract words from PDF and optionally render page images.
+    Returns a book data structure compatible with the frontend.
+    """
+    pages_data = extract_words(pdf_path)
+
+    book_data = {
+        "title": title,
+        "pages": pages_data,
+    }
+
+    return book_data
+
+
 if __name__ == "__main__":
     if len(sys.argv) != 2:
         print(
