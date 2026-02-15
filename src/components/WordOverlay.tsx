@@ -24,7 +24,7 @@ export function WordOverlay({ word, isSelected, onClick }: WordOverlayProps) {
       className={[
         'cursor-pointer box-border border-2 rounded-sm transition-colors',
         isSelected
-          ? 'border-purple-500 bg-purple-100/30'
+          ? 'border-yellow-400 bg-yellow-100/40'
           : 'border-transparent hover:border-yellow-400 hover:bg-yellow-100/20',
       ].join(' ')}
     />

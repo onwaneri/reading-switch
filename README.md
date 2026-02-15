@@ -6,10 +6,15 @@ Built at TreeHacks 2025.
 
 ## Setup
 
-**Prerequisites:** Node.js 18+, Python 3
+**Prerequisites:**
+- Node.js 18+
+- Python 3
 
 ```bash
+# Install Node.js dependencies
 npm install
+
+# Install Python dependencies
 pip install -r requirements.txt
 ```
 
@@ -19,42 +24,88 @@ Create `.env.local` with your Anthropic API key:
 ANTHROPIC_API_KEY=sk-ant-...
 ```
 
+Initialize data directories:
+
+```bash
+mkdir -p data/users data/recommended
+echo "[]" > data/users/users.json
+```
+
 ## Running
 
 ```bash
 npm run dev
 ```
 
-Open http://localhost:3000, upload a PDF, and start tapping words.
+Open http://localhost:3000, create an account, and start reading!
+
+## Adding Recommended Books
+
+1. Place PDF files in the `data/recommended/` folder
+2. Visit the library page (PDFs auto-process on first load)
+
+That's it! PDFs are automatically processed when you first access the library. Pages render on-demand for instant display. Manual processing is also available with `npm run setup-recommended`.
 
 ## How It Works
 
-1. **Upload** — Client renders each PDF page to PNG via `pdfjs-dist`, sends to server
-2. **OCR** — Server runs `scripts/extract_words.py` (pdfminer.six) to extract word bounding boxes as percentages
-3. **Read** — Reader page renders page images with invisible, clickable word overlays positioned over each word
-4. **Analyze** — Tapping a word calls `/api/analyze` which returns an SWI breakdown (word sum, morphemes, etymology, word family)
-5. **Display** — Right-side panel slides in showing color-coded morpheme chips and analysis at the selected depth level
+1. **Authentication** — File-based user accounts with bcrypt password hashing and HTTP-only cookie sessions
+2. **Library** — Two collections: "My Library" (user's personal books) and "Recommended Library" (pre-processed PDFs)
+3. **Recommended Processing** — PDFs in `data/recommended/` auto-process when library page loads:
+   - Copy PDF to book directory
+   - Extract word bounding boxes using `pdfminer.six`
+   - Create book metadata (runs once, cached after)
+4. **Upload** — Users can add their own PDFs via the web interface:
+   - Server saves PDF and extracts word positions
+   - Book is added to user's library
+5. **Read** — Reader renders PDF pages on-demand using `pdfjs-dist` with invisible, clickable word overlays
+6. **Analyze** — Tapping a word calls `/api/analyze` which uses Claude AI (Anthropic API) to return an SWI breakdown (word sum, morphemes, etymology, word family)
+7. **Display** — Right-side panel shows color-coded morpheme chips and analysis at the selected depth level
 
 ## Project Structure
 
 ```
 src/
 ├── app/
-│   ├── page.tsx                # Landing / upload page
-│   ├── reader/page.tsx         # Book reader with SWI panel
+│   ├── page.tsx                     # Login / registration page
+│   ├── library/page.tsx             # Library with My Library and Recommended carousels
+│   ├── upload/page.tsx              # PDF upload page
+│   ├── reader/page.tsx              # Book reader with SWI panel
 │   └── api/
-│       ├── analyze/route.ts    # SWI word analysis endpoint
-│       └── upload/route.ts     # PDF image storage + OCR
+│       ├── auth/                    # Authentication endpoints (login, register, logout, session)
+│       ├── library/route.ts         # User library management
+│       ├── recommended/route.ts     # Recommended books with auto-processing
+│       ├── analyze/route.ts         # SWI word analysis via Claude AI
+│       └── upload/route.ts          # PDF processing and storage
 ├── components/
-│   ├── UploadForm.tsx          # PDF upload + client-side rendering
-│   ├── BookPage.tsx            # Page image + word overlays
-│   ├── WordOverlay.tsx         # Clickable word button over text
-│   ├── SWIPanel.tsx            # Right-side analysis panel
-│   └── DepthSelector.tsx       # Analysis depth toggle
+│   ├── DropZone.tsx                 # Drag-and-drop file upload
+│   ├── BookCard.tsx                 # Book thumbnail card
+│   ├── BookCarousel.tsx             # Horizontal scrolling carousel
+│   ├── BookPage.tsx                 # Page image + word overlays
+│   ├── WordOverlay.tsx              # Clickable word button
+│   ├── SWIPanel.tsx                 # Right-side analysis panel
+│   ├── DepthSelector.tsx            # Analysis depth toggle
+│   └── PageSearch.tsx               # In-book page search
+├── contexts/
+│   └── AuthContext.tsx              # Authentication state provider
 ├── lib/
-│   └── wordCache.ts            # In-memory SWI analysis cache
+│   ├── userManager.ts               # User CRUD operations
+│   ├── sessionManager.ts            # Session management
+│   ├── bookManager.ts               # Book metadata and auto-processing
+│   └── wordCache.ts                 # In-memory SWI analysis cache
 └── types/
-    └── book.ts                 # Shared types (WordPosition, SWIAnalysis, etc.)
+    ├── auth.ts                      # User and Session types
+    └── book.ts                      # Book, WordPosition, SWIAnalysis types
+
+scripts/
+├── extract_words.py                 # Extract word bounding boxes from PDF
+└── setup-recommended.mjs            # One-time script to process recommended PDFs
+
+data/
+├── users/
+│   └── users.json                   # User accounts
+└── recommended/
+    ├── index.json                   # Processed recommended books index
+    └── *.pdf                        # Source PDFs (user-populated)
 ```
 
 ## Key Integration Points

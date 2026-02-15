@@ -54,3 +54,6 @@ venv/
 /test_output/
 *.mp3
 *.wav
+
+# generated icons (downloaded at runtime from Noun Project API)
+/public/icons/

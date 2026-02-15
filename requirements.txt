@@ -1,4 +1,7 @@
 pdfminer.six
 anthropic
 openai
+pdf2image
 python-dotenv
+requests
+requests-oauthlib
