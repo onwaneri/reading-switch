@@ -2,7 +2,9 @@
 
 import { useEffect } from 'react';
 import type { DepthLevel, SWIAnalysis, WordPosition } from '@/types/book';
+import type { ChatMessage, ChatContext } from '@/types/chat';
 import { useAudioCache } from '@/hooks/useAudioCache';
+import { ChatAssistant } from '@/components/ChatAssistant';
 
 interface SWIPanelProps {
   selectedWord: WordPosition | null;
@@ -11,6 +13,14 @@ interface SWIPanelProps {
   error: string | null;
   depth: DepthLevel;
   onClose: () => void;
+  bookTitle: string;
+  pageText: string;
+  chatMessages: ChatMessage[];
+  isChatStreaming: boolean;
+  chatError: string | null;
+  onChatSend: (text: string, context: ChatContext) => void;
+  isChatExpanded: boolean;
+  onToggleChatExpanded: () => void;
 }
 
 function WordSumDisplay({ wordSum, bases, word }: { wordSum: string; bases: string[]; word: string }) {
@@ -44,7 +54,10 @@ function WordSumDisplay({ wordSum, bases, word }: { wordSum: string; bases: stri
   );
 }
 
-export function SWIPanel({ selectedWord, analysis, isLoading, error, depth, onClose }: SWIPanelProps) {
+export function SWIPanel({
+  selectedWord, analysis, isLoading, error, depth, onClose,
+  bookTitle, pageText, chatMessages, isChatStreaming, chatError, onChatSend, isChatExpanded, onToggleChatExpanded,
+}: SWIPanelProps) {
   const isOpen = selectedWord !== null;
   const showMatrix = depth === 'standard' || depth === 'deep';
   const showRelatives = depth === 'deep';
@@ -194,6 +207,19 @@ export function SWIPanel({ selectedWord, analysis, isLoading, error, depth, onCl
                 </div>
               </section>
             )}
+
+            {/* 5. Socratic Chat */}
+            <ChatAssistant
+              analysis={analysis}
+              bookTitle={bookTitle}
+              pageText={pageText}
+              messages={chatMessages}
+              isStreaming={isChatStreaming}
+              error={chatError}
+              onSend={onChatSend}
+              isExpanded={isChatExpanded}
+              onToggleExpand={onToggleChatExpanded}
+            />
           </div>
         )}
 

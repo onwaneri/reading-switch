@@ -8,6 +8,7 @@ import { SWIPanel } from '@/components/SWIPanel';
 import { DepthSelector } from '@/components/DepthSelector';
 import { PageSearch } from '@/components/PageSearch';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSocraticChat } from '@/hooks/useSocraticChat';
 
 function ReaderContent() {
   const searchParams = useSearchParams();
@@ -26,6 +27,14 @@ function ReaderContent() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [inLibrary, setInLibrary] = useState(false);
   const [checkingLibrary, setCheckingLibrary] = useState(true);
+  const {
+    messages: chatMessages,
+    isStreaming: isChatStreaming,
+    error: chatError,
+    sendMessage: sendChatMessage,
+    reset: resetChat,
+  } = useSocraticChat();
+  const [isChatExpanded, setIsChatExpanded] = useState(false);
   const isPanelOpen = selectedWord !== null;
   const showTwoPages = !isPanelOpen;
   const nextPage = book?.pages[currentPage + 1];
@@ -115,6 +124,8 @@ function ReaderContent() {
     setAnalysis(null);
     setAnalysisError(null);
     setIsAnalyzing(true);
+    resetChat();
+    setIsChatExpanded(false);
     const textToUse = pageTextOverride ?? pageText;
 
     try {
@@ -136,7 +147,7 @@ function ReaderContent() {
     } finally {
       setIsAnalyzing(false);
     }
-  }, [book?.title, pageText]);
+  }, [book?.title, pageText, resetChat]);
 
   const handleWordClick = useCallback((word: WordPosition, page: BookPageType) => {
     const pageIndex = page.pageNumber - 1;
@@ -161,6 +172,8 @@ function ReaderContent() {
     setSelectedWord(null);
     setAnalysis(null);
     setAnalysisError(null);
+    resetChat();
+    setIsChatExpanded(false);
   };
 
   // Scale the 2-page spread as a unit to fit viewport (keeps pages touching)
@@ -306,6 +319,14 @@ function ReaderContent() {
         error={analysisError}
         depth={depth}
         onClose={handleClosePanel}
+        bookTitle={book?.title ?? ''}
+        pageText={pageText}
+        chatMessages={chatMessages}
+        isChatStreaming={isChatStreaming}
+        chatError={chatError}
+        onChatSend={sendChatMessage}
+        isChatExpanded={isChatExpanded}
+        onToggleChatExpanded={() => setIsChatExpanded(prev => !prev)}
       />
 
       {/* Page Search Modal */}
