@@ -400,11 +400,11 @@ export function SWIPanel({
                         {/* Prefix — only show if single base or if this is the first base */}
                         {!hasMultipleBases && analysis.matrix.prefixes.length > 0 && (
                           <div className="flex flex-col justify-between w-[153px] h-[241px] bg-white border-2 border-[#061B2E] py-2.5 -mr-px">
-                            {analysis.matrix.prefixes.flatMap((p, i) => [
+                            {analysis.matrix.prefixes.slice(0, 7).flatMap((p, i, arr) => [
                               <span key={`prefix-${i}`} className="font-bold text-[#061B2E] text-center" style={{ fontSize: '1.5em', lineHeight: '29px' }}>
                                 {p.text}-
                               </span>,
-                              i < analysis.matrix.prefixes.length - 1 && (
+                              i < arr.length - 1 && (
                                 <div key={`divider-${i}`} className="w-full h-0 border-t-2 border-[#061B2E]" />
                               )
                             ]).filter(Boolean)}
@@ -422,11 +422,11 @@ export function SWIPanel({
                         {/* Suffix — only show if single base or if this is the last base */}
                         {!hasMultipleBases && analysis.matrix.suffixes.length > 0 && (
                           <div className="flex flex-col justify-between w-[153px] h-[241px] bg-white border-2 border-[#061B2E] py-2.5 -ml-px">
-                            {analysis.matrix.suffixes.flatMap((s, i) => [
+                            {analysis.matrix.suffixes.slice(0, 7).flatMap((s, i, arr) => [
                               <span key={`suffix-${i}`} className="font-bold text-[#061B2E] text-center" style={{ fontSize: '1.5em', lineHeight: '29px' }}>
                                 -{s.text}
                               </span>,
-                              i < analysis.matrix.suffixes.length - 1 && (
+                              i < arr.length - 1 && (
                                 <div key={`divider-${i}`} className="w-full h-0 border-t-2 border-[#061B2E]" />
                               )
                             ]).filter(Boolean)}

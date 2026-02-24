@@ -21,6 +21,7 @@ function ReaderContent() {
   const [currentPage, setCurrentPage] = useState(0);
   const [selectedWord, setSelectedWord] = useState<WordPosition | null>(null);
   const [showSidebar, setShowSidebar] = useState(false);
+  const [panelDisplayPage, setPanelDisplayPage] = useState<number | null>(null);
   const [analysis, setAnalysis] = useState<SWIAnalysis | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisError, setAnalysisError] = useState<string | null>(null);
@@ -28,6 +29,8 @@ function ReaderContent() {
   const spreadRef = useRef<HTMLDivElement>(null);
   const [spreadScale, setSpreadScale] = useState(1);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [inLibrary, setInLibrary] = useState(false);
   const [checkingLibrary, setCheckingLibrary] = useState(true);
   const {
@@ -176,6 +179,8 @@ function ReaderContent() {
 
   // Reconstruct approximate page text from word positions (reading order)
   const page = book?.pages[currentPage];
+  // When the panel is open, show the page the clicked word came from (may differ from currentPage)
+  const panelPage = panelDisplayPage !== null ? book?.pages[panelDisplayPage] : page;
   const pageText = page
     ? page.words
         .slice()
@@ -221,7 +226,8 @@ function ReaderContent() {
   }, [book?.title, pageText, resetChat]);
 
   const handleWordClick = useCallback((word: WordPosition, page: BookPageType) => {
-    // Only capture the word information, don't change pages or store extra data
+    // Track which page the word came from so the panel shows that page
+    setPanelDisplayPage(page.pageNumber - 1);
     fetchAnalysis(word, depth);
   }, [fetchAnalysis, depth]);
 
@@ -237,7 +243,24 @@ function ReaderContent() {
     setShowSidebar(false);
     setAnalysis(null);
     setAnalysisError(null);
+    setPanelDisplayPage(null);
     resetChat();
+  };
+
+  const handleDeleteBook = async () => {
+    if (!bookId) return;
+    setIsDeleting(true);
+    try {
+      await fetch('/api/library', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ bookId }),
+      });
+      router.push('/library');
+    } catch {
+      setIsDeleting(false);
+      setShowDeleteConfirm(false);
+    }
   };
 
   // Clear selected word when page changes
@@ -246,6 +269,7 @@ function ReaderContent() {
     setShowSidebar(false);
     setAnalysis(null);
     setAnalysisError(null);
+    setPanelDisplayPage(null);
   }, [currentPage]);
 
   // Scale the 2-page spread as a unit to fit viewport (keeps pages touching)
@@ -353,6 +377,20 @@ function ReaderContent() {
         {/* Navigation + User buttons - far right */}
         <div className="flex items-center gap-3" style={{ zIndex: 0 }}>
           <button
+            onClick={() => setShowDeleteConfirm(true)}
+            className="flex items-center justify-center"
+            style={{ width: '40px', height: '40px' }}
+            title="Delete from library"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" className="w-6 h-6" style={{ color: '#061B2E' }}>
+              <polyline points="3 6 5 6 21 6" />
+              <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+              <path d="M10 11v6M14 11v6" />
+              <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+            </svg>
+          </button>
+
+          <button
             onClick={() => setIsSearchOpen(true)}
             className="flex items-center justify-center"
             style={{ width: '40px', height: '40px' }}
@@ -415,10 +453,10 @@ function ReaderContent() {
                 compact
               />
             </div>
-          ) : page ? (
+          ) : panelPage ? (
             <div className="w-full h-full flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
               <BookPage
-                page={page}
+                page={panelPage}
                 pdfUrl={book.pdfUrl}
                 selectedWord={selectedWord}
                 onWordClick={handleWordClick}
@@ -488,6 +526,33 @@ function ReaderContent() {
         isOpen={isSearchOpen}
         onClose={() => setIsSearchOpen(false)}
       />
+
+      {/* Delete confirmation dialog */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40">
+          <div className="bg-white rounded-2xl shadow-xl px-8 py-6 max-w-sm w-full mx-4 flex flex-col items-center gap-4">
+            <p className="text-[#061B2E] font-semibold text-center text-base">
+              Are you sure you would like to delete from library?
+            </p>
+            <div className="flex gap-3 w-full">
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                disabled={isDeleting}
+                className="flex-1 py-2 rounded-xl border-2 border-gray-200 text-gray-600 font-semibold hover:bg-gray-50 transition disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteBook}
+                disabled={isDeleting}
+                className="flex-1 py-2 rounded-xl bg-red-500 text-white font-semibold hover:bg-red-600 transition disabled:opacity-50"
+              >
+                {isDeleting ? 'Deleting…' : 'Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
